@@ -9,6 +9,9 @@ readme = "README.md"
 python = ">=3.11,<3.13"
 bleak = "^0.22.2"
 
+[tool.poetry.scripts]
+colmi_r02_client = "colmi_r02_client.main:run"
+
 
 [build-system]
 requires = ["poetry-core"]
