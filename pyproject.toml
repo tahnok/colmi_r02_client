@@ -13,6 +13,9 @@ bleak = "^0.22.2"
 colmi_r02_client = "colmi_r02_client.main:run"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
