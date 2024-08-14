@@ -1,4 +1,4 @@
-from colmi_r02_client.main import DailyHeartRateParser
+from colmi_r02_client.heart_rate import DailyHeartRateParser
 
 HEART_RATE_PACKETS = [
         bytearray(b'\x15\x00\x18\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x002'),
