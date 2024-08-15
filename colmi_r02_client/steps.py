@@ -2,12 +2,15 @@ from dataclasses import dataclass
 
 from colmi_r02_client.packet import make_packet
 
-CMD_GET_STEP_SOMEDAY = 67 #0x43
+CMD_GET_STEP_SOMEDAY = 67  # 0x43
 
-GET_TODAY_STEPS_PACKET = make_packet(CMD_GET_STEP_SOMEDAY, bytearray(b'\x00\x0F\x00\x5F\x01'))
+GET_TODAY_STEPS_PACKET = make_packet(
+    CMD_GET_STEP_SOMEDAY, bytearray(b"\x00\x0f\x00\x5f\x01")
+)
+
 
 @dataclass
-class SportDetail():
+class SportDetail:
     year: int
     month: int
     day: int
@@ -17,7 +20,7 @@ class SportDetail():
     distance: int
 
 
-class SportDetailParser():
+class SportDetailParser:
     r"""
     Parse SportDetailPacket, of which there will be several
 
@@ -62,20 +65,21 @@ class SportDetailParser():
             distance = packet[11] | (packet[12] << 8)
 
             details = SportDetail(
-                    year=year,
-                    month=month,
-                    day=day,
-                    time_index=time_index,
-                    calories=calories,
-                    steps=steps,
-                    distance=distance
-                    )
+                year=year,
+                month=month,
+                day=day,
+                time_index=time_index,
+                calories=calories,
+                steps=steps,
+                distance=distance,
+            )
             print("Details: ", details)
             self.details.append(details)
 
             self.index += 1
             if packet[5] == packet[6] - 1:
                 self.reset()
+
 
 def bcd_to_decimal(b: int) -> int:
     return (((b >> 4) & 15) * 10) + (b & 15)

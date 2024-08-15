@@ -10,10 +10,10 @@ TODO:
 
 import asyncio
 
+from colmi_r02_client.client import Client
 
 ADDRESS = "70:CB:0D:D0:34:1C"
 
-from colmi_r02_client.client import Client
 
 async def main():
     print("Connecting...")
@@ -23,13 +23,13 @@ async def main():
         print("device info", await client.get_device_info())
         print("battery:", await client.get_battery())
 
-        #target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
-        #await send_packet(client, rx_char, read_heart_rate_packet(target))
+        # target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
+        # await send_packet(client, rx_char, read_heart_rate_packet(target))
+
 
 def run():
     asyncio.run(main())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run()
-
-

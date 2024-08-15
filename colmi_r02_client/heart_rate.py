@@ -3,17 +3,18 @@ import struct
 
 from colmi_r02_client.packet import make_packet
 
-CMD_READ_HEART_RATE = 21 # 0x15
+CMD_READ_HEART_RATE = 21  # 0x15
+
 
 def read_heart_rate_packet(target: datetime | None = None) -> bytearray:
     if target is None:
-        target = datetime.now(timezone.utc).replace(hour=0,minute=0,second=0)
+        target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
     data = bytearray(struct.pack("<L", int(target.timestamp())))
 
     return make_packet(CMD_READ_HEART_RATE, data)
 
 
-class DailyHeartRateParser():
+class DailyHeartRateParser:
     def __init__(self):
         self.reset()
 
@@ -29,7 +30,7 @@ class DailyHeartRateParser():
         d = self.m_utc_time
         if d is None:
             return False
-        now = datetime.now() # use local time
+        now = datetime.now()  # use local time
         return d.year == now.year and d.month == now.month and d.day == now.day
 
     def parse(self, packet: bytearray) -> None:
@@ -51,25 +52,37 @@ class DailyHeartRateParser():
             return
         if sub_type == 0:
             self.end = False
-            self.size = packet[2] #number of expected readings or packets?
+            self.size = packet[2]  # number of expected readings or packets?
             self.range = packet[3]
-            self.heart_rate_array = [-1] * (self.size * 13) # don't really need this but...
+            self.heart_rate_array = [-1] * (
+                self.size * 13
+            )  # don't really need this but...
         elif sub_type == 1:
             # next 4 bytes are a timestamp
             ts = struct.unpack_from("<l", packet, offset=2)[0]
             self.m_utc_time = datetime.fromtimestamp(ts, timezone.utc)
-            #TODO timezone?
+            # TODO timezone?
 
             # remaining 16 - type - subtype - 4 - crc = 9
-            self.heart_rate_array[0:9] = list(packet[6:-1]) # I think this is the rest?
+            self.heart_rate_array[0:9] = list(packet[6:-1])  # I think this is the rest?
             self.index += 9
         else:
             b = len(self.heart_rate_array)
             print("packet", list(packet[2:15]))
-            print("slice", self.heart_rate_array[self.index:self.index+13])
-            print([x for x in self.heart_rate_array[self.index:self.index+13] if x != -1])
-            assert not [x for x in self.heart_rate_array[self.index:self.index+13] if x != -1]
-            self.heart_rate_array[self.index:self.index+13] = list(packet[2:15])
+            print("slice", self.heart_rate_array[self.index : self.index + 13])
+            print(
+                [
+                    x
+                    for x in self.heart_rate_array[self.index : self.index + 13]
+                    if x != -1
+                ]
+            )
+            assert not [
+                x
+                for x in self.heart_rate_array[self.index : self.index + 13]
+                if x != -1
+            ]
+            self.heart_rate_array[self.index : self.index + 13] = list(packet[2:15])
             assert b == len(self.heart_rate_array)
             self.index += 13
             if sub_type == self.size - 1:
@@ -78,4 +91,3 @@ class DailyHeartRateParser():
         self.end = True
         # possibly do a reset
         print("post self", self)
-

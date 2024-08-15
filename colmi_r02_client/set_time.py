@@ -2,9 +2,9 @@ from datetime import datetime
 
 from colmi_r02_client.packet import make_packet
 
-from bleak import BleakClient
 
 CMD_SET_TIME = 1
+
 
 def set_time_packet(target: datetime | None = None) -> bytearray:
     if target is None:
@@ -16,8 +16,9 @@ def set_time_packet(target: datetime | None = None) -> bytearray:
     data[3] = byte_to_bcd(target.hour)
     data[4] = byte_to_bcd(target.minute)
     data[5] = byte_to_bcd(target.second)
-    data[6] = 1 # set language to english, 0 is chinese
+    data[6] = 1  # set language to english, 0 is chinese
     return make_packet(CMD_SET_TIME, data)
+
 
 def byte_to_bcd(b: int) -> int:
     assert b < 99

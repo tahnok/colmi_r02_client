@@ -19,25 +19,28 @@ def empty_parse(_packet: bytearray) -> None:
     """Used for commands that we expect a response, but there's nothing in the response"""
     return None
 
+
 def log_packet(packet: bytearray) -> None:
     print("received: ", packet)
+
 
 # TODO put these somewhere nice
 # these are commands that we expect to have a response returned for
 COMMAND_HANDLERS = {
-        battery.CMD_BATTERY: battery.parse_battery,
-        real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
-        real_time_heart_rate.CMD_STOP_HEART_RATE: empty_parse,
-        steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
-    }
+    battery.CMD_BATTERY: battery.parse_battery,
+    real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
+    real_time_heart_rate.CMD_STOP_HEART_RATE: empty_parse,
+    steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
+}
 
-class Client():
+
+class Client:
     def __init__(self, address: str):
         self.address = address
         self.bleak_client = BleakClient(self.address)
-        self.queues = { cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS.keys() }
+        self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS.keys()}
 
-    async def __aenter__(self) -> 'Client':
+    async def __aenter__(self) -> "Client":
         await self.connect()
         return self
 
@@ -62,7 +65,6 @@ class Client():
 
     async def disconnect(self):
         await self.bleak_client.disconnect()
-        
 
     def handle_tx(self, _: BleakGATTCharacteristic, packet: bytearray) -> None:
         packet_type = packet[0]
@@ -88,7 +90,9 @@ class Client():
         tries = 0
         while len(valid_hr) < 6 and tries < 20:
             try:
-                data = await asyncio.wait_for(self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2)
+                data = await asyncio.wait_for(
+                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2
+                )
                 if data["error_code"] == 1:
                     print("No heart rate detected, probably not on")
                     break
@@ -99,7 +103,9 @@ class Client():
                 tries += 1
                 await self.send_packet(real_time_heart_rate.CONTINUE_HEART_RATE_PACKET)
 
-        await self.send_packet(real_time_heart_rate.STOP_HEART_RATE_PACKET,)
+        await self.send_packet(
+            real_time_heart_rate.STOP_HEART_RATE_PACKET,
+        )
         return valid_hr
 
     async def get_realtime_spo2(self) -> list[int]:
@@ -110,7 +116,9 @@ class Client():
         tries = 0
         while len(valid_spo2) < 6 and tries < 20:
             try:
-                data = await asyncio.wait_for(self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2)
+                data = await asyncio.wait_for(
+                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2
+                )
                 if data["error_code"] == 1:
                     print("No heart rate detected, probably not on")
                     break
@@ -120,7 +128,9 @@ class Client():
                 print(".")
                 tries += 1
 
-        await self.send_packet(real_time_heart_rate.STOP_SPO2_PACKET,)
+        await self.send_packet(
+            real_time_heart_rate.STOP_SPO2_PACKET,
+        )
         return valid_spo2
 
     async def set_time(self):
