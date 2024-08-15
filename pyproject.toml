@@ -16,6 +16,7 @@ colmi_r02_client = "colmi_r02_client.main:run"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 ruff = "^0.6.0"
+mypy = "^1.11.1"
 
 [build-system]
 requires = ["poetry-core"]

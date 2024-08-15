@@ -86,7 +86,7 @@ class Client:
         await self.send_packet(real_time_heart_rate.START_HEART_RATE_PACKET)
         print("wrote HR reading packet, waiting...")
 
-        valid_hr = []
+        valid_hr: list[int] = []
         tries = 0
         while len(valid_hr) < 6 and tries < 20:
             try:
@@ -112,7 +112,7 @@ class Client:
         await self.send_packet(real_time_heart_rate.START_SPO2_PACKET)
         print("wrote SPO2 reading packet, waiting...")
 
-        valid_spo2 = []
+        valid_spo2: list[int] = []
         tries = 0
         while len(valid_spo2) < 6 and tries < 20:
             try:

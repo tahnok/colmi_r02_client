@@ -36,12 +36,12 @@ class SportDetailParser:
     def __init__(self):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.new_calorie_protocol = False
         self.index = 0
         self.details: list[SportDetail] = []
 
-    def parse(self, packet: bytearray):
+    def parse(self, packet: bytearray) -> None:
         assert len(packet) == 16
         assert packet[0] == CMD_GET_STEP_SOMEDAY
 
