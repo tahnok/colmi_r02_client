@@ -8,18 +8,29 @@ TODO:
     - "scan" mode instead of hard coded address
 """
 
-import asyncio
+import logging
+
+import asyncclick as click
 
 from colmi_r02_client.client import Client
 
 ADDRESS = "70:CB:0D:D0:34:1C"
 
+logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
-async def main():
-    print("Connecting...")
 
+@click.group()
+@click.option("--debug/--no-debug", default=False)
+def main(debug):
+    if debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger("bleak").setLevel(logging.INFO)
+
+
+@main.command()
+async def info():
+    """Get device info and battery level"""
     async with Client(ADDRESS) as client:
-        print("Connected")
         print("device info", await client.get_device_info())
         print("battery:", await client.get_battery())
 
@@ -27,9 +38,16 @@ async def main():
         # await send_packet(client, rx_char, read_heart_rate_packet(target))
 
 
-def run():
-    asyncio.run(main())
+@main.command()
+@click.option(
+    "--target", type=click.DateTime(), required=True, help="The date you want logs for"
+)
+async def get_heart_rate_log(target):
+    """Get heart rate for given date (defaults to today)"""
+
+    async with Client(ADDRESS) as client:
+        print(await client.get_heart_rate_log(target))
 
 
 if __name__ == "__main__":
-    run()
+    main(_anyio_backend="asyncio")

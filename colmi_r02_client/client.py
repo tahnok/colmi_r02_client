@@ -1,10 +1,21 @@
 import asyncio
+from collections.abc import Callable
+from datetime import datetime, timezone
+import logging
 from types import TracebackType
+from typing import Any
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from colmi_r02_client import battery, real_time_heart_rate, steps, set_time, blink_twice
+from colmi_r02_client import (
+    battery,
+    real_time_heart_rate,
+    steps,
+    set_time,
+    blink_twice,
+    heart_rate,
+)
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -13,6 +24,8 @@ UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 DEVICE_INFO_UUID = "0000180A-0000-1000-8000-00805F9B34FB"
 DEVICE_HW_UUID = "00002A27-0000-1000-8000-00805F9B34FB"
 DEVICE_FW_UUID = "00002A26-0000-1000-8000-00805F9B34FB"
+
+logger = logging.getLogger(__name__)
 
 
 def empty_parse(_packet: bytearray) -> None:
@@ -26,11 +39,15 @@ def log_packet(packet: bytearray) -> None:
 
 # TODO put these somewhere nice
 # these are commands that we expect to have a response returned for
-COMMAND_HANDLERS = {
+# they must accept a packet as bytearray and then return a value to be put
+# in the queue for that command type
+# NOTE: if the value returned is None, it is not added to the queue
+COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
     real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
     real_time_heart_rate.CMD_STOP_HEART_RATE: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
+    heart_rate.CMD_READ_HEART_RATE: heart_rate.HeartRateLogParser().parse,
 }
 
 
@@ -41,7 +58,9 @@ class Client:
         self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS.keys()}
 
     async def __aenter__(self) -> "Client":
+        logger.info(f"Connecting to {self.address}")
         await self.connect()
+        logger.info("Connected!")
         return self
 
     async def __aexit__(
@@ -67,13 +86,18 @@ class Client:
         await self.bleak_client.disconnect()
 
     def handle_tx(self, _: BleakGATTCharacteristic, packet: bytearray) -> None:
+        logger.info(f"Received packet {packet}")
         packet_type = packet[0]
         assert packet_type < 127, f"Packet has error bit set {packet}"
 
         if packet_type in COMMAND_HANDLERS:
-            self.queues[packet_type].put_nowait(COMMAND_HANDLERS[packet_type](packet))
+            result = COMMAND_HANDLERS[packet_type](packet)
+            if result is not None:
+                self.queues[packet_type].put_nowait(result)
+            else:
+                logger.debug(f"No result returned from parser for {packet_type}")
         else:
-            print("Did not expect this packet", packet)
+            logger.warn("Did not expect this packet", packet)
 
     async def send_packet(self, packet: bytearray) -> None:
         await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
@@ -155,4 +179,15 @@ class Client:
         fw_version = await client.read_gatt_char(fw_info_char)
         data["fw_version"] = fw_version.decode("utf-8")
 
+        return data
+
+    async def get_heart_rate_log(
+        self, target: datetime | None = None
+    ) -> heart_rate.HeartRateLog:
+        if target is None:
+            target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+        await self.send_packet(heart_rate.read_heart_rate_packet(target))
+        data = await asyncio.wait_for(
+            self.queues[heart_rate.CMD_READ_HEART_RATE].get(), timeout=2
+        )
         return data

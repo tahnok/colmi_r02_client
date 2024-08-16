@@ -1,20 +1,34 @@
+"""This is called the DailyHeartRate in Java."""
+
 from datetime import datetime, timezone
+from dataclasses import dataclass
+import logging
 import struct
 
 from colmi_r02_client.packet import make_packet
 
 CMD_READ_HEART_RATE = 21  # 0x15
 
+logger = logging.getLogger(__name__)
 
-def read_heart_rate_packet(target: datetime | None = None) -> bytearray:
-    if target is None:
-        target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+
+def read_heart_rate_packet(target: datetime) -> bytearray:
+    """target datetime should be at midnight for the day of interest"""
     data = bytearray(struct.pack("<L", int(target.timestamp())))
 
     return make_packet(CMD_READ_HEART_RATE, data)
 
 
-class DailyHeartRateParser:
+@dataclass
+class HeartRateLog:
+    heart_rates: list[int]
+    timestamp: datetime
+    size: int
+    index: int
+    range: int
+
+
+class HeartRateLogParser:
     def __init__(self):
         self.reset()
 
@@ -33,7 +47,7 @@ class DailyHeartRateParser:
         now = datetime.now()  # use local time
         return d.year == now.year and d.month == now.month and d.day == now.day
 
-    def parse(self, packet: bytearray) -> None:
+    def parse(self, packet: bytearray) -> HeartRateLog | None:
         r"""
         first byte of packet should always be CMD_READ_HEART_RATE (21)
         second byte is the sub_type
@@ -49,7 +63,8 @@ class DailyHeartRateParser:
         sub_type = packet[1]
         if sub_type == 255 or (self.is_today() and sub_type == 23):
             # reset?
-            return
+            logger.info("error response from heart rate log request")
+            return None
         if sub_type == 0:
             self.end = False
             self.size = packet[2]  # number of expected readings or packets?
@@ -64,30 +79,20 @@ class DailyHeartRateParser:
             # TODO timezone?
 
             # remaining 16 - type - subtype - 4 - crc = 9
-            self.heart_rate_array[0:9] = list(packet[6:-1])  # I think this is the rest?
+            self.heart_rate_array[0:9] = list(packet[6:-1])
             self.index += 9
         else:
-            b = len(self.heart_rate_array)
-            print("packet", list(packet[2:15]))
-            print("slice", self.heart_rate_array[self.index : self.index + 13])
-            print(
-                [
-                    x
-                    for x in self.heart_rate_array[self.index : self.index + 13]
-                    if x != -1
-                ]
-            )
-            assert not [
-                x
-                for x in self.heart_rate_array[self.index : self.index + 13]
-                if x != -1
-            ]
             self.heart_rate_array[self.index : self.index + 13] = list(packet[2:15])
-            assert b == len(self.heart_rate_array)
             self.index += 13
             if sub_type == self.size - 1:
                 self.end = True
+                return HeartRateLog(
+                    heart_rates=self.heart_rate_array,
+                    timestamp=self.m_utc_time,
+                    size=self.size,
+                    range=self.range,
+                    index=self.index,
+                )
                 # probaby do a reset
         self.end = True
         # possibly do a reset
-        print("post self", self)
