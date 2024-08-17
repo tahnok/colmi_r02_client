@@ -28,26 +28,31 @@ class HeartRateLog:
     range: int
 
 
+class NoData:
+    """Returned when there's no heart rate data"""
+
+
 class HeartRateLogParser:
     def __init__(self):
         self.reset()
 
     def reset(self):
         self.heart_rate_array = []
-        self.m_utc_time = None
+        self.timestamp = None
         self.size = 0
         self.index = 0
         self.end = False
         self.range = 5
 
     def is_today(self) -> bool:
-        d = self.m_utc_time
+        d = self.timestamp
         if d is None:
             return False
         now = datetime.now()  # use local time
+        logger.info(f"Comparing {d} to {now}")
         return d.year == now.year and d.month == now.month and d.day == now.day
 
-    def parse(self, packet: bytearray) -> HeartRateLog | None:
+    def parse(self, packet: bytearray) -> HeartRateLog | NoData | None:
         r"""
         first byte of packet should always be CMD_READ_HEART_RATE (21)
         second byte is the sub_type
@@ -61,38 +66,50 @@ class HeartRateLogParser:
         """
 
         sub_type = packet[1]
-        if sub_type == 255 or (self.is_today() and sub_type == 23):
-            # reset?
+        if sub_type == 255:
             logger.info("error response from heart rate log request")
-            return None
+            self.reset()
+            return NoData()
+        if self.is_today() and sub_type == 23:
+            assert self.timestamp
+            result = HeartRateLog(
+                heart_rates=self.heart_rate_array,
+                timestamp=self.timestamp,
+                size=self.size,
+                range=self.range,
+                index=self.index,
+            )
+            self.reset()
+            return result
         if sub_type == 0:
             self.end = False
-            self.size = packet[2]  # number of expected readings or packets?
+            self.size = packet[2]  # number of expected packets
             self.range = packet[3]
-            self.heart_rate_array = [-1] * (
-                self.size * 13
-            )  # don't really need this but...
+            self.heart_rate_array = [-1] * (self.size * 13)
+            return None
         elif sub_type == 1:
             # next 4 bytes are a timestamp
             ts = struct.unpack_from("<l", packet, offset=2)[0]
-            self.m_utc_time = datetime.fromtimestamp(ts, timezone.utc)
+            self.timestamp = datetime.fromtimestamp(ts, timezone.utc)
             # TODO timezone?
 
             # remaining 16 - type - subtype - 4 - crc = 9
             self.heart_rate_array[0:9] = list(packet[6:-1])
             self.index += 9
+            return None
         else:
             self.heart_rate_array[self.index : self.index + 13] = list(packet[2:15])
             self.index += 13
             if sub_type == self.size - 1:
-                self.end = True
-                return HeartRateLog(
+                assert self.timestamp
+                result = HeartRateLog(
                     heart_rates=self.heart_rate_array,
-                    timestamp=self.m_utc_time,
+                    timestamp=self.timestamp,
                     size=self.size,
                     range=self.range,
                     index=self.index,
                 )
-                # probaby do a reset
-        self.end = True
-        # possibly do a reset
+                self.reset()
+                return result
+            else:
+                return None

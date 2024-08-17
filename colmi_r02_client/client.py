@@ -41,7 +41,8 @@ def log_packet(packet: bytearray) -> None:
 # these are commands that we expect to have a response returned for
 # they must accept a packet as bytearray and then return a value to be put
 # in the queue for that command type
-# NOTE: if the value returned is None, it is not added to the queue
+# NOTE: if the value returned is None, it is not added to the queue, this is to support
+# multi packet messages where the parser has state
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
     real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
@@ -183,7 +184,7 @@ class Client:
 
     async def get_heart_rate_log(
         self, target: datetime | None = None
-    ) -> heart_rate.HeartRateLog:
+    ) -> heart_rate.HeartRateLog | heart_rate.NoData:
         if target is None:
             target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
         await self.send_packet(heart_rate.read_heart_rate_packet(target))

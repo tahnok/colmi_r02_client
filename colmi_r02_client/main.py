@@ -4,7 +4,6 @@ A python client for connecting to the Colmi R02 Smart ring
 
 TODO:
     - get "Stress"
-    - make nicer methods for getting data from callback
     - "scan" mode instead of hard coded address
 """
 
@@ -46,7 +45,7 @@ async def get_heart_rate_log(target):
     """Get heart rate for given date (defaults to today)"""
 
     async with Client(ADDRESS) as client:
-        print(await client.get_heart_rate_log(target))
+        print("Data:", await client.get_heart_rate_log(target))
 
 
 if __name__ == "__main__":

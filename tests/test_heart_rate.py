@@ -1,4 +1,6 @@
-from colmi_r02_client.heart_rate import DailyHeartRateParser
+from datetime import datetime, timezone
+
+from colmi_r02_client.heart_rate import HeartRateLogParser, HeartRateLog, NoData
 
 HEART_RATE_PACKETS = [
     bytearray(b"\x15\x00\x18\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x002"),
@@ -28,9 +30,27 @@ HEART_RATE_PACKETS = [
 ]
 
 
-def test_parse():
-    parser = DailyHeartRateParser()
-    for p in HEART_RATE_PACKETS:
+def test_parse_return_none_until_end():
+    parser = HeartRateLogParser()
+    for p in HEART_RATE_PACKETS[:-1]:
+        assert parser.parse(p) is None
+
+
+def test_parse_until_end():
+    parser = HeartRateLogParser()
+    for p in HEART_RATE_PACKETS[:-1]:
         parser.parse(p)
 
-    assert len(parser.heart_rate_array) == 312  # this is probably wrong
+    result = parser.parse(HEART_RATE_PACKETS[-1])
+
+    assert isinstance(result, HeartRateLog)
+
+    assert len(result.heart_rates) == 312  # this is probably wrong
+
+    expected_timestamp = datetime(year=2024, month=8, day=10, hour=0, minute=0, tzinfo=timezone.utc)
+    assert result.timestamp == expected_timestamp
+
+def test_parse_no_data():
+    parser = HeartRateLogParser()
+    result = parser.parse(bytearray(b'\x15\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14'))
+    assert isinstance(result, NoData)
