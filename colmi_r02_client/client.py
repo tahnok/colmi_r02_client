@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import datetime, timezone
 import logging
+from pathlib import Path
 from types import TracebackType
 from typing import Any
 
@@ -53,10 +54,11 @@ COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
 
 
 class Client:
-    def __init__(self, address: str):
+    def __init__(self, address: str, record_to: Path | None = None):
         self.address = address
         self.bleak_client = BleakClient(self.address)
         self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS.keys()}
+        self.record_to = record_to
 
     async def __aenter__(self) -> "Client":
         logger.info(f"Connecting to {self.address}")
@@ -99,6 +101,11 @@ class Client:
                 logger.debug(f"No result returned from parser for {packet_type}")
         else:
             logger.warn("Did not expect this packet", packet)
+
+        if self.record_to is not None:
+            with self.record_to.open("ab") as f:
+                f.write(packet)
+                f.write("\n".encode("utf-8"))
 
     async def send_packet(self, packet: bytearray) -> None:
         await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
