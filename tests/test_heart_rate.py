@@ -47,10 +47,15 @@ def test_parse_until_end():
 
     assert len(result.heart_rates) == 312  # this is probably wrong
 
-    expected_timestamp = datetime(year=2024, month=8, day=10, hour=0, minute=0, tzinfo=timezone.utc)
+    expected_timestamp = datetime(
+        year=2024, month=8, day=10, hour=0, minute=0, tzinfo=timezone.utc
+    )
     assert result.timestamp == expected_timestamp
+
 
 def test_parse_no_data():
     parser = HeartRateLogParser()
-    result = parser.parse(bytearray(b'\x15\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14'))
+    result = parser.parse(
+        bytearray(b"\x15\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14")
+    )
     assert isinstance(result, NoData)

@@ -1,74 +1,109 @@
 """
 A python client for connecting to the Colmi R02 Smart ring
-
-
-TODO:
-    - get "Stress"
-    - "scan" mode instead of hard coded address
 """
 
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 import logging
 import time
 
 import asyncclick as click
+from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
 
-ADDRESS = "70:CB:0D:D0:34:1C"
-
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
-@dataclass
-class CliConfig:
-    record: bool = False
-
-def from_context(context: click.Context) -> CliConfig:
-    context.ensure_object(CliConfig)
-    config: CliConfig = context.obj
-    return config
+logger = logging.getLogger(__name__)
 
 @click.group()
 @click.option("--debug/--no-debug", default=False)
-@click.option("--record/--no-record", default=False, help="Write all received packets to a file")
+@click.option(
+    "--record/--no-record", default=False, help="Write all received packets to a file"
+)
+@click.option("--address", required=True, help="Bluetooth address")
 @click.pass_context
-def main(context: click.Context, debug: bool, record: bool):
-    from_context(context).record = record
-
+async def cli_client(context: click.Context, debug: bool, record: bool, address: str):
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("bleak").setLevel(logging.INFO)
 
+    record_to = None
+    if record:
+        now = int(time.time())
+        record_to = Path(f"colmi_response_capture_{now}.bin")
+        logger.info(f"Recording responses to {record_to}")
 
-@main.command()
-async def info():
+    client = Client(address, record_to=record_to)
+
+    context.obj = await context.with_async_resource(client)
+
+
+@cli_client.command()
+@click.pass_obj
+async def info(client: Client):
     """Get device info and battery level"""
-    async with Client(ADDRESS) as client:
-        print("device info", await client.get_device_info())
-        print("battery:", await client.get_battery())
+
+    print("device info", await client.get_device_info())
+    print("battery:", await client.get_battery())
 
         # target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
         # await send_packet(client, rx_char, read_heart_rate_packet(target))
 
 
-@main.command()
+@cli_client.command()
 @click.option(
     "--target", type=click.DateTime(), required=True, help="The date you want logs for"
 )
-@click.pass_context
-async def get_heart_rate_log(context: click.Context, target: datetime):
-    """Get heart rate for given date (defaults to today)"""
-    config = from_context(context)
-    record_to = None
-    if config.record:
-        now = int(time.time())
-        record_to = Path(f"colmi_response_capture_{now}.bin")
+@click.pass_obj
+async def get_heart_rate_log(client: Client, target: datetime):
+    """Get heart rate for given date"""
 
-    async with Client(ADDRESS, record_to=record_to) as client:
-        print("Data:", await client.get_heart_rate_log(target))
+    print("Data:", await client.get_heart_rate_log(target))
 
 
-if __name__ == "__main__":
-    main(_anyio_backend="asyncio")
+DEVICE_NAME_PREFIXES = [
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "VK-5098",
+    "MERLIN",
+    "Hello Ring",
+    "RING1",
+    "boAtring",
+    "TR-R02",
+    "SE",
+    "EVOLVEO",
+    "GL-SR2",
+    "Blaupunkt",
+    "KSIX RING",
+]
+
+
+@click.group()
+async def util():
+    """Generic utilities for the R02 that don't need an address."""
+
+    ...
+
+@util.command()
+async def scan():
+    """Scan for possible devices based on known prefixes and print the bluetooth address."""
+
+    # TODO maybe bluetooth specific stuff like this should be in another package?
+    devices = await BleakScanner.discover()
+
+    if len(devices) > 0:
+        print("Found device(s)")
+        print(f"{'Name':>20}  | Address")
+        print("-" * 44)
+        for d in devices:
+            name = d.name
+            if name and any(name for p in DEVICE_NAME_PREFIXES if name.startswith(p)):
+                print(f"{name:>20}  |  {d.address}")
+    else:
+        print("No devices found. Try moving the ring closer to computer")
