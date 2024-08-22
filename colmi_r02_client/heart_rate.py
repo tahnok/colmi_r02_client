@@ -19,6 +19,18 @@ def read_heart_rate_packet(target: datetime) -> bytearray:
     return make_packet(CMD_READ_HEART_RATE, data)
 
 
+def _minutes_so_far(dt: datetime) -> int:
+    """
+    Return the number of minutes elapsed in the day so far plus 1.
+
+    I don't know why it's off by one, it just is.
+    """
+    midnight = datetime(dt.year, dt.month, dt.day).timestamp()
+    delta = dt.timestamp() - midnight  # seconds since midnight
+
+    return round(delta / 60) + 1
+
+
 @dataclass
 class HeartRateLog:
     heart_rates: list[int]
@@ -37,7 +49,7 @@ class HeartRateLogParser:
         self.reset()
 
     def reset(self):
-        self.heart_rate_array = []
+        self._raw_heart_rates = []
         self.timestamp = None
         self.size = 0
         self.index = 0
@@ -73,7 +85,7 @@ class HeartRateLogParser:
         if self.is_today() and sub_type == 23:
             assert self.timestamp
             result = HeartRateLog(
-                heart_rates=self.heart_rate_array,
+                heart_rates=self.heart_rates,
                 timestamp=self.timestamp,
                 size=self.size,
                 range=self.range,
@@ -85,7 +97,7 @@ class HeartRateLogParser:
             self.end = False
             self.size = packet[2]  # number of expected packets
             self.range = packet[3]
-            self.heart_rate_array = [-1] * (self.size * 13)
+            self._raw_heart_rates = [-1] * (self.size * 13)
             return None
         elif sub_type == 1:
             # next 4 bytes are a timestamp
@@ -94,16 +106,16 @@ class HeartRateLogParser:
             # TODO timezone?
 
             # remaining 16 - type - subtype - 4 - crc = 9
-            self.heart_rate_array[0:9] = list(packet[6:-1])
+            self._raw_heart_rates[0:9] = list(packet[6:-1])
             self.index += 9
             return None
         else:
-            self.heart_rate_array[self.index : self.index + 13] = list(packet[2:15])
+            self._raw_heart_rates[self.index : self.index + 13] = list(packet[2:15])
             self.index += 13
             if sub_type == self.size - 1:
                 assert self.timestamp
                 result = HeartRateLog(
-                    heart_rates=self.heart_rate_array,
+                    heart_rates=self.heart_rates,
                     timestamp=self.timestamp,
                     size=self.size,
                     range=self.range,
@@ -113,3 +125,26 @@ class HeartRateLogParser:
                 return result
             else:
                 return None
+
+    @property
+    def heart_rates(self):
+        """
+        Normalize and clean heart rate logs
+
+        I don't really understand why it's implemented this way.
+        I think to handle cases where there's a bit more or less data than expected
+        and if there's bad values in time slots that shouldn't exist yet because those
+        slots are in the future.
+        """
+
+        hr = self._raw_heart_rates.copy()
+
+        if len(self._raw_heart_rates) > 288:
+            hr = hr[0:288]
+        elif len(self._raw_heart_rates) < 288:
+            hr.extend([0] * (288 - len(hr)))
+        if self.is_today():
+            m = _minutes_so_far(datetime.now(tz=timezone.utc)) // 5
+            hr[m:] = [0] * len(hr[m:])
+
+        return hr

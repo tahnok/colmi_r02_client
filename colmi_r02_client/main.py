@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
 logger = logging.getLogger(__name__)
 
+
 @click.group()
 @click.option("--debug/--no-debug", default=False)
 @click.option(
@@ -47,8 +48,8 @@ async def info(client: Client):
     print("device info", await client.get_device_info())
     print("battery:", await client.get_battery())
 
-        # target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
-        # await send_packet(client, rx_char, read_heart_rate_packet(target))
+    # target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
+    # await send_packet(client, rx_char, read_heart_rate_packet(target))
 
 
 @cli_client.command()
@@ -89,6 +90,7 @@ async def util():
     """Generic utilities for the R02 that don't need an address."""
 
     ...
+
 
 @util.command()
 async def scan():

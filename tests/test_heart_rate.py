@@ -1,6 +1,13 @@
 from datetime import datetime, timezone
 
-from colmi_r02_client.heart_rate import HeartRateLogParser, HeartRateLog, NoData
+from freezegun import freeze_time
+
+from colmi_r02_client.heart_rate import (
+    HeartRateLogParser,
+    HeartRateLog,
+    NoData,
+    _minutes_so_far,
+)
 
 HEART_RATE_PACKETS = [
     bytearray(b"\x15\x00\x18\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x002"),
@@ -45,7 +52,7 @@ def test_parse_until_end():
 
     assert isinstance(result, HeartRateLog)
 
-    assert len(result.heart_rates) == 312  # this is probably wrong
+    assert len(result.heart_rates) == 288
 
     expected_timestamp = datetime(
         year=2024, month=8, day=10, hour=0, minute=0, tzinfo=timezone.utc
@@ -59,3 +66,81 @@ def test_parse_no_data():
         bytearray(b"\x15\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14")
     )
     assert isinstance(result, NoData)
+
+
+@freeze_time("2024-01-01")
+def test_is_today_today():
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 288
+    parser.timestamp = datetime(2024, 1, 1, 1, 1, 0)
+
+    assert parser.is_today()
+
+
+@freeze_time("2024-01-02")
+def test_is_today_not_today():
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 288
+    parser.timestamp = datetime(2024, 1, 1, 1, 1, 0)
+
+    assert not parser.is_today()
+
+
+def test_heart_rates_less_288():
+    """Test that we pad the heart rate array to 288 with 0s if the raw data is less than 288 bytes long."""
+
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 286
+
+    hr = parser.heart_rates
+
+    assert len(hr) == 288
+    assert hr == (([1] * 286) + [0, 0])
+
+
+def test_get_heart_rate_more_288():
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 289
+
+    hr = parser.heart_rates
+
+    assert len(hr) == 288
+    assert hr == ([1] * 288)
+
+
+def test_get_heart_rate_288_not_today():
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 288
+    parser.timestamp = datetime(2020, 1, 1, 1, 1, 0)
+
+    hr = parser.heart_rates
+
+    assert len(hr) == 288
+    assert hr == ([1] * 288)
+
+
+@freeze_time("2024-01-01 01:00")
+def test_get_heart_rate_288_today():
+    parser = HeartRateLogParser()
+    parser._raw_heart_rates = [1] * 288
+    parser.timestamp = datetime(2024, 1, 1, 1, 1, 0)
+
+    hr = parser.heart_rates
+
+    assert len(hr) == 288
+    assert hr == ([1] * 12) + ([0] * 276)
+
+
+def test_minutes_so_far_midnight():
+    x = datetime(2024, 1, 1)
+    assert _minutes_so_far(x) == 1
+
+
+def test_minutes_so_far_minutes():
+    x = datetime(2024, 1, 1, 0, 15)
+    assert _minutes_so_far(x) == 16
+
+
+def test_minutes_so_far_day():
+    x = datetime(2024, 1, 1, 23, 59)
+    assert _minutes_so_far(x) == 1440
