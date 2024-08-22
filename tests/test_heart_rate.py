@@ -144,3 +144,13 @@ def test_minutes_so_far_minutes():
 def test_minutes_so_far_day():
     x = datetime(2024, 1, 1, 23, 59)
     assert _minutes_so_far(x) == 1440
+
+
+def test_with_times():
+    h = HeartRateLog([60] * 288, datetime(2024, 1, 1, 5), 0, 0, 5)
+
+    hr_with_ts = h.heart_rates_with_times()
+
+    assert len(hr_with_ts) == 288
+    assert hr_with_ts[0][1] == datetime(2024, 1, 1, 0, 0)
+    assert hr_with_ts[-1][1] == datetime(2024, 1, 1, 23, 55)

@@ -1,6 +1,6 @@
 """This is called the DailyHeartRate in Java."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass
 import logging
 import struct
@@ -31,6 +31,18 @@ def _minutes_so_far(dt: datetime) -> int:
     return round(delta / 60) + 1
 
 
+def _add_times(heart_rates: list[int], ts: datetime) -> list[tuple[int, datetime]]:
+    assert len(heart_rates) == 288, "Need exactly 288 points at 5 minute intervals"
+    result = []
+    m = datetime(ts.year, ts.month, ts.day)
+    five_min = timedelta(minutes=5)
+    for hr in heart_rates:
+        result.append((hr, m))
+        m += five_min
+
+    return result
+
+
 @dataclass
 class HeartRateLog:
     heart_rates: list[int]
@@ -38,6 +50,9 @@ class HeartRateLog:
     size: int
     index: int
     range: int
+
+    def heart_rates_with_times(self):
+        return _add_times(self.heart_rates, self.timestamp)
 
 
 class NoData:
