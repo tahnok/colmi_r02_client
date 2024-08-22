@@ -13,3 +13,12 @@ Inspired by https://github.com/atc1441/ATC_RF03_Ring/
  - [ ] SPO2 "logging"
  - [ ] "Stress" measurement
  - [ ] Sleep tracking
+ - [ ] Set log frequency
+ - [x] Set ring time
+
+# TODO
+
+- nicer check script for pytest, ruff and mypy
+- add more CLI functionlity
+    - set time
+    - measure real time hr
