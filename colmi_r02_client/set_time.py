@@ -6,9 +6,7 @@ from colmi_r02_client.packet import make_packet
 CMD_SET_TIME = 1
 
 
-def set_time_packet(target: datetime | None = None) -> bytearray:
-    if target is None:
-        target = datetime.now()
+def set_time_packet(target: datetime) -> bytearray:
     data = bytearray(7)
     data[0] = byte_to_bcd(target.year % 2000)
     data[1] = byte_to_bcd(target.month)
@@ -21,8 +19,8 @@ def set_time_packet(target: datetime | None = None) -> bytearray:
 
 
 def byte_to_bcd(b: int) -> int:
-    assert b < 99
-    assert b > 0
+    assert b < 100
+    assert b >= 0
 
     tens = b // 10
     ones = b % 10

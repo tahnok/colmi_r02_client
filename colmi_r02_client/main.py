@@ -68,6 +68,13 @@ async def get_heart_rate_log(client: Client, target: datetime):
             if hr != 0:
                 print(f"{ts.strftime('%H:%M')}, {hr}")
 
+@cli_client.command()
+@click.option(
+    "--target", type=click.DateTime(), required=True, help="The date you want logs for",
+)
+@click.pass_obj
+async def set_time(client: Client, target: datetime):
+    await client.set_time(target)
 
 DEVICE_NAME_PREFIXES = [
     "R01",
@@ -95,7 +102,6 @@ DEVICE_NAME_PREFIXES = [
 async def util():
     """Generic utilities for the R02 that don't need an address."""
 
-    ...
 
 
 @util.command()

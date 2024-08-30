@@ -165,8 +165,8 @@ class Client:
         )
         return valid_spo2
 
-    async def set_time(self):
-        await self.send_packet(set_time.set_time_packet())
+    async def set_time(self, ts: datetime):
+        await self.send_packet(set_time.set_time_packet(ts))
 
     async def blink_twice(self):
         await self.send_packet(blink_twice.BLINK_TWICE_PACKET)
