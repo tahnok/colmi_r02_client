@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--address", required=True, help="Bluetooth address")
 @click.pass_context
-async def cli_client(context: click.Context, debug: bool, record: bool, address: str):
+async def cli_client(context: click.Context, debug: bool, record: bool, address: str) -> None:
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("bleak").setLevel(logging.INFO)
@@ -45,7 +45,7 @@ async def cli_client(context: click.Context, debug: bool, record: bool, address:
 
 @cli_client.command()
 @click.pass_obj
-async def info(client: Client):
+async def info(client: Client) -> None:
     """Get device info and battery level"""
 
     print("device info", await client.get_device_info())
@@ -63,7 +63,7 @@ async def info(client: Client):
     help="The date you want logs for",
 )
 @click.pass_obj
-async def get_heart_rate_log(client: Client, target: datetime):
+async def get_heart_rate_log(client: Client, target: datetime) -> None:
     """Get heart rate for given date"""
 
     log = await client.get_heart_rate_log(target)
@@ -82,7 +82,7 @@ async def get_heart_rate_log(client: Client, target: datetime):
     help="The date you want logs for",
 )
 @click.pass_obj
-async def set_time(client: Client, target: datetime):
+async def set_time(client: Client, target: datetime) -> None:
     await client.set_time(target)
 
 

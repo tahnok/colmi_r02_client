@@ -77,7 +77,7 @@ class HeartRateLogParser:
             return False
         now = datetime.now()  # use local time
         logger.info(f"Comparing {d} to {now}")
-        return d.year == now.year and d.month == now.month and d.day == now.day
+        return bool(d.year == now.year and d.month == now.month and d.day == now.day)
 
     def parse(self, packet: bytearray) -> HeartRateLog | NoData | None:
         r"""

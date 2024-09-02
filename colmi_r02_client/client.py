@@ -57,7 +57,7 @@ class Client:
     def __init__(self, address: str, record_to: Path | None = None):
         self.address = address
         self.bleak_client = BleakClient(self.address)
-        self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS}
+        self.queues: dict[int, asyncio.Queue] = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS}
         self.record_to = record_to
 
     async def __aenter__(self) -> "Client":
@@ -167,13 +167,13 @@ class Client:
         )
         return valid_spo2
 
-    async def set_time(self, ts: datetime):
+    async def set_time(self, ts: datetime) -> None:
         await self.send_packet(set_time.set_time_packet(ts))
 
-    async def blink_twice(self):
+    async def blink_twice(self) -> None:
         await self.send_packet(blink_twice.BLINK_TWICE_PACKET)
 
-    async def get_device_info(self):
+    async def get_device_info(self) -> dict[str, str]:
         client = self.bleak_client
         data = {}
         device_info_service = client.services.get_service(DEVICE_INFO_UUID)
