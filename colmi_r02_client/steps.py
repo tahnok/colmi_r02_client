@@ -5,7 +5,8 @@ from colmi_r02_client.packet import make_packet
 CMD_GET_STEP_SOMEDAY = 67  # 0x43
 
 GET_TODAY_STEPS_PACKET = make_packet(
-    CMD_GET_STEP_SOMEDAY, bytearray(b"\x00\x0f\x00\x5f\x01")
+    CMD_GET_STEP_SOMEDAY,
+    bytearray(b"\x00\x0f\x00\x5f\x01"),
 )
 
 

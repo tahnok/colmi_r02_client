@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 @click.group()
 @click.option("--debug/--no-debug", default=False)
 @click.option(
-    "--record/--no-record", default=False, help="Write all received packets to a file"
+    "--record/--no-record",
+    default=False,
+    help="Write all received packets to a file",
 )
 @click.option("--address", required=True, help="Bluetooth address")
 @click.pass_context
@@ -55,7 +57,10 @@ async def info(client: Client):
 
 @cli_client.command()
 @click.option(
-    "--target", type=click.DateTime(), required=True, help="The date you want logs for"
+    "--target",
+    type=click.DateTime(),
+    required=True,
+    help="The date you want logs for",
 )
 @click.pass_obj
 async def get_heart_rate_log(client: Client, target: datetime):
@@ -68,13 +73,18 @@ async def get_heart_rate_log(client: Client, target: datetime):
             if hr != 0:
                 print(f"{ts.strftime('%H:%M')}, {hr}")
 
+
 @cli_client.command()
 @click.option(
-    "--target", type=click.DateTime(), required=True, help="The date you want logs for",
+    "--target",
+    type=click.DateTime(),
+    required=True,
+    help="The date you want logs for",
 )
 @click.pass_obj
 async def set_time(client: Client, target: datetime):
     await client.set_time(target)
+
 
 DEVICE_NAME_PREFIXES = [
     "R01",
@@ -101,7 +111,6 @@ DEVICE_NAME_PREFIXES = [
 @click.group()
 async def util():
     """Generic utilities for the R02 that don't need an address."""
-
 
 
 @util.command()

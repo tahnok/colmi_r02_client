@@ -57,7 +57,7 @@ class Client:
     def __init__(self, address: str, record_to: Path | None = None):
         self.address = address
         self.bleak_client = BleakClient(self.address)
-        self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS.keys()}
+        self.queues = {cmd: asyncio.Queue() for cmd in COMMAND_HANDLERS}
         self.record_to = record_to
 
     async def __aenter__(self) -> "Client":
@@ -100,12 +100,12 @@ class Client:
             else:
                 logger.debug(f"No result returned from parser for {packet_type}")
         else:
-            logger.warn("Did not expect this packet", packet)
+            logger.warning(f"Did not expect this packet: {packet}")
 
         if self.record_to is not None:
             with self.record_to.open("ab") as f:
                 f.write(packet)
-                f.write("\n".encode("utf-8"))
+                f.write(b"\n")
 
     async def send_packet(self, packet: bytearray) -> None:
         await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
@@ -123,7 +123,8 @@ class Client:
         while len(valid_hr) < 6 and tries < 20:
             try:
                 data = await asyncio.wait_for(
-                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2
+                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(),
+                    timeout=2,
                 )
                 if data["error_code"] == 1:
                     print("No heart rate detected, probably not on")
@@ -149,7 +150,8 @@ class Client:
         while len(valid_spo2) < 6 and tries < 20:
             try:
                 data = await asyncio.wait_for(
-                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(), 2
+                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(),
+                    timeout=2,
                 )
                 if data["error_code"] == 1:
                     print("No heart rate detected, probably not on")
@@ -189,13 +191,11 @@ class Client:
 
         return data
 
-    async def get_heart_rate_log(
-        self, target: datetime | None = None
-    ) -> heart_rate.HeartRateLog | heart_rate.NoData:
+    async def get_heart_rate_log(self, target: datetime | None = None) -> heart_rate.HeartRateLog | heart_rate.NoData:
         if target is None:
             target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
         await self.send_packet(heart_rate.read_heart_rate_packet(target))
-        data = await asyncio.wait_for(
-            self.queues[heart_rate.CMD_READ_HEART_RATE].get(), timeout=2
+        return await asyncio.wait_for(
+            self.queues[heart_rate.CMD_READ_HEART_RATE].get(),
+            timeout=2,
         )
-        return data

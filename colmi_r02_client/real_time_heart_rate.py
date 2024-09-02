@@ -11,7 +11,8 @@ CMD_STOP_HEART_RATE = 106  # 0x6A
 
 
 START_HEART_RATE_PACKET = make_packet(
-    CMD_START_HEART_RATE, bytearray(b"\x01\x00")
+    CMD_START_HEART_RATE,
+    bytearray(b"\x01\x00"),
 )  # why is this backwards?
 CONTINUE_HEART_RATE_PACKET = make_packet(CMD_REAL_TIME_HEART_RATE, bytearray(b"3"))
 STOP_HEART_RATE_PACKET = make_packet(CMD_STOP_HEART_RATE, bytearray(b"\x01\x00\x00"))

@@ -21,6 +21,8 @@ def crc(packet: bytearray) -> int:
 
 
 async def send_packet(
-    client: BleakClient, rx_char: BleakGATTCharacteristic, packet: bytearray
+    client: BleakClient,
+    rx_char: BleakGATTCharacteristic,
+    packet: bytearray,
 ) -> None:
     await client.write_gatt_char(rx_char, packet, response=False)

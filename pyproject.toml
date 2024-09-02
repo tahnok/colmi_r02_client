@@ -24,3 +24,41 @@ freezegun = "^1.5.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_redundant_casts = true
+strict_equality = true
+disallow_incomplete_defs = true
+
+[tool.ruff]
+line-length = 125
+
+[tool.ruff.lint]
+select = [
+  "ASYNC",  # flake8-async
+  "B",      # flake8-bugbear
+  "C4",     # flake8-comprehensions
+  "DJ",     # flake8-django
+  "E",      # pycodestyle
+  "F",      # Pyflakes
+  "FLY",    # flynt
+  "INT",    # flake8-gettext
+  "NPY",    # NumPy-specific rules
+  "PD",     # pandas-vet
+  "PIE",    # flake8-pie
+  "PLE",    # Pylint errors
+  "PT",     # flake8-pytest-style
+  "RET504", # flake8-return
+  "RSE",    # flake8-raise
+  "SIM",    # flake8-simplify
+  "T10",    # flake8-debugger
+  "TID",    # flake8-tidy-imports
+  "UP",     # pyupgrade
+  "W",      # pycodestyle
+  "YTT",    # flake8-2020
+  "RUF",    # Ruff-specific rules
+]
