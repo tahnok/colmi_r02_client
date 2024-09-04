@@ -50,6 +50,7 @@ COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     real_time_heart_rate.CMD_STOP_HEART_RATE: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
     heart_rate.CMD_READ_HEART_RATE: heart_rate.HeartRateLogParser().parse,
+    set_time.CMD_SET_TIME: empty_parse,
 }
 
 

@@ -2,7 +2,7 @@
 A python client for connecting to the Colmi R02 Smart ring
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import logging
 import time
@@ -76,14 +76,20 @@ async def get_heart_rate_log(client: Client, target: datetime) -> None:
 
 @cli_client.command()
 @click.option(
-    "--target",
+    "--when",
     type=click.DateTime(),
-    required=True,
-    help="The date you want logs for",
+    required=False,
+    help="The date and time you want to set the ring to",
 )
 @click.pass_obj
-async def set_time(client: Client, target: datetime) -> None:
-    await client.set_time(target)
+async def set_time(client: Client, when: datetime | None) -> None:
+    """
+    Set the time on the ring, required if you want to be able to interpret any of the logged data
+    """
+
+    if when is None:
+        when = datetime.now(tz=timezone.utc)
+    await client.set_time(when)
 
 
 DEVICE_NAME_PREFIXES = [
