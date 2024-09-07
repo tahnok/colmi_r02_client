@@ -21,6 +21,10 @@ ruff = "^0.6.0"
 mypy = "^1.11.1"
 freezegun = "^1.5.1"
 
+
+[tool.poetry.group.doc.dependencies]
+pdoc = "^14.6.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
