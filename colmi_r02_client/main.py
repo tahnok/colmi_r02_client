@@ -35,7 +35,9 @@ async def cli_client(context: click.Context, debug: bool, record: bool, address:
     record_to = None
     if record:
         now = int(time.time())
-        record_to = Path(f"colmi_response_capture_{now}.bin")
+        captures = Path("captures")
+        captures.mkdir(exist_ok=True)
+        record_to = captures / Path(f"colmi_response_capture_{now}.bin")
         logger.info(f"Recording responses to {record_to}")
 
     client = Client(address, record_to=record_to)
@@ -50,9 +52,6 @@ async def info(client: Client) -> None:
 
     print("device info", await client.get_device_info())
     print("battery:", await client.get_battery())
-
-    # target = datetime(2024,8,10,0,0,0,0,tzinfo=timezone.utc)
-    # await send_packet(client, rx_char, read_heart_rate_packet(target))
 
 
 @cli_client.command()
