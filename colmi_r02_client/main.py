@@ -91,6 +91,15 @@ async def set_time(client: Client, when: datetime | None) -> None:
     await client.set_time(when)
 
 
+@cli_client.command()
+@click.pass_obj
+async def get_heart_rate_log_settings(client: Client) -> None:
+    """Get heart rate log settings"""
+
+    click.echo("heart rate log settings:")
+    click.echo(await client.get_heart_rate_log_settings())
+
+
 DEVICE_NAME_PREFIXES = [
     "R01",
     "R02",

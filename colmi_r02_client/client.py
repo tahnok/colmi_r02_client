@@ -16,6 +16,7 @@ from colmi_r02_client import (
     set_time,
     blink_twice,
     heart_rate,
+    heart_rate_log_settings,
 )
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -38,12 +39,6 @@ def log_packet(packet: bytearray) -> None:
     print("received: ", packet)
 
 
-# TODO put these somewhere nice
-# these are commands that we expect to have a response returned for
-# they must accept a packet as bytearray and then return a value to be put
-# in the queue for that command type
-# NOTE: if the value returned is None, it is not added to the queue, this is to support
-# multi packet messages where the parser has state
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
     real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
@@ -51,7 +46,17 @@ COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
     heart_rate.CMD_READ_HEART_RATE: heart_rate.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
+    heart_rate_log_settings.CMD_HEART_RATE_LOG_SETTINGS: heart_rate_log_settings.parse_heart_rate_log_settings,
 }
+"""
+TODO put these somewhere nice
+
+These are commands that we expect to have a response returned for
+they must accept a packet as bytearray and then return a value to be put
+in the queue for that command type
+NOTE: if the value returned is None, it is not added to the queue, this is to support
+multi packet messages where the parser has state
+"""
 
 
 class Client:
@@ -200,5 +205,12 @@ class Client:
         await self.send_packet(heart_rate.read_heart_rate_packet(target))
         return await asyncio.wait_for(
             self.queues[heart_rate.CMD_READ_HEART_RATE].get(),
+            timeout=2,
+        )
+
+    async def get_heart_rate_log_settings(self) -> heart_rate_log_settings.HeartRateLogSettings:
+        await self.send_packet(heart_rate_log_settings.READ_HEART_RATE_LOG_SETTINGS_PACKET)
+        return await asyncio.wait_for(
+            self.queues[heart_rate_log_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
             timeout=2,
         )
