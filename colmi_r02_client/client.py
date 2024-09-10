@@ -111,9 +111,11 @@ class Client:
     async def send_packet(self, packet: bytearray) -> None:
         await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
 
-    async def get_battery(self):
+    async def get_battery(self) -> battery.BatteryInfo:
         await self.send_packet(battery.BATTERY_PACKET)
-        return await self.queues[battery.CMD_BATTERY].get()
+        result = await self.queues[battery.CMD_BATTERY].get()
+        assert isinstance(result, battery.BatteryInfo)
+        return result
 
     async def get_realtime_heart_rate(self) -> list[int]:
         await self.send_packet(real_time_heart_rate.START_HEART_RATE_PACKET)
