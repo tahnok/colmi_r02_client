@@ -1,10 +1,15 @@
-from bleak import BleakClient
-from bleak.backends.characteristic import BleakGATTCharacteristic
+def make_packet(command: int, sub_data: bytearray | None = None) -> bytearray:
+    """
+    Make a well formed packet from a command key and optional sub data.
 
+    That means ensuring it's 16 bytes long and the last byte is a valid CRC.
 
-def make_packet(command_key: int, sub_data: bytearray | None = None) -> bytearray:
+    command must be between 0 and 255 (inclusive)
+    sub_data must have a len between 0 and 14
+    """
+    assert 0 <= command <= 255
     packet = bytearray(16)
-    packet[0] = command_key
+    packet[0] = command
 
     if sub_data:
         assert len(sub_data) <= 14
@@ -18,11 +23,3 @@ def make_packet(command_key: int, sub_data: bytearray | None = None) -> bytearra
 
 def crc(packet: bytearray) -> int:
     return sum(packet) & 255
-
-
-async def send_packet(
-    client: BleakClient,
-    rx_char: BleakGATTCharacteristic,
-    packet: bytearray,
-) -> None:
-    await client.write_gatt_char(rx_char, packet, response=False)
