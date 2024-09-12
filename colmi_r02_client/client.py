@@ -89,13 +89,17 @@ class Client:
         assert rx_char
         self.rx_char = rx_char
 
-        await self.bleak_client.start_notify(UART_TX_CHAR_UUID, self.handle_tx)
+        await self.bleak_client.start_notify(UART_TX_CHAR_UUID, self._handle_tx)
 
     async def disconnect(self):
         await self.bleak_client.disconnect()
 
-    def handle_tx(self, _: BleakGATTCharacteristic, packet: bytearray) -> None:
+    def _handle_tx(self, _: BleakGATTCharacteristic, packet: bytearray) -> None:
+        """Bleak callback that handles new packets from the ring."""
+
         logger.info(f"Received packet {packet}")
+
+        assert len(packet) == 16, f"Packet is the wrong length {packet}"
         packet_type = packet[0]
         assert packet_type < 127, f"Packet has error bit set {packet}"
 
