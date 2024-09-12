@@ -99,6 +99,7 @@ async def get_heart_rate_log_settings(client: Client) -> None:
     click.echo("heart rate log settings:")
     click.echo(await client.get_heart_rate_log_settings())
 
+
 @cli_client.command()
 @click.pass_obj
 async def get_real_time_heart_rate(client: Client) -> None:
@@ -108,7 +109,12 @@ async def get_real_time_heart_rate(client: Client) -> None:
     """
 
     click.echo("Starting reading, please wait.")
-    click.echo(await client.get_realtime_heart_rate())
+    result = await client.get_realtime_heart_rate()
+    if result:
+        click.echo(result)
+    else:
+        click.echo("Error, no HR detected. Is the ring being worn?")
+
 
 DEVICE_NAME_PREFIXES = [
     "R01",

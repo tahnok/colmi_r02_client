@@ -122,57 +122,39 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def get_realtime_heart_rate(self) -> list[int]:
-        await self.send_packet(real_time_hr.START_HEART_RATE_PACKET)
+    async def get_realtime_heart_rate(self) -> list[int] | None:
+        return await self._poll_real_time_reading(real_time_hr.START_HEART_RATE_PACKET)
 
-        valid_hr: list[int] = []
+    async def _poll_real_time_reading(self, start_packet: bytearray) -> list[int] | None:
+        await self.send_packet(start_packet)
+
+        valid_readings: list[int] = []
+        error = False
         tries = 0
-        while len(valid_hr) < 6 and tries < 20:
+        while len(valid_readings) < 6 and tries < 20:
             try:
-                data = await asyncio.wait_for(
+                data: real_time_hr.Reading | real_time_hr.ReadingError = await asyncio.wait_for(
                     self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
                     timeout=2,
                 )
-                if data["error_code"] == 1:
-                    print("No heart rate detected, probably not on")
+                if isinstance(data, real_time_hr.ReadingError):
+                    error = True
                     break
-                if data["value"] != 0:
-                    valid_hr.append(data["value"])
+                if data.value != 0:
+                    valid_readings.append(data.value)
             except TimeoutError:
-                print(".")
                 tries += 1
                 await self.send_packet(real_time_hr.CONTINUE_HEART_RATE_PACKET)
 
         await self.send_packet(
             real_time_hr.STOP_HEART_RATE_PACKET,
         )
-        return valid_hr
+        if error:
+            return None
+        return valid_readings
 
-    async def get_realtime_spo2(self) -> list[int]:
-        await self.send_packet(real_time_hr.START_SPO2_PACKET)
-        print("wrote SPO2 reading packet, waiting...")
-
-        valid_spo2: list[int] = []
-        tries = 0
-        while len(valid_spo2) < 6 and tries < 20:
-            try:
-                data = await asyncio.wait_for(
-                    self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
-                    timeout=2,
-                )
-                if data["error_code"] == 1:
-                    print("No heart rate detected, probably not on")
-                    break
-                if data["value"] != 0:
-                    valid_spo2.append(data["value"])
-            except TimeoutError:
-                print(".")
-                tries += 1
-
-        await self.send_packet(
-            real_time_hr.STOP_SPO2_PACKET,
-        )
-        return valid_spo2
+    async def get_realtime_spo2(self) -> list[int] | None:
+        return await self._poll_real_time_reading(real_time_hr.START_SPO2_PACKET)
 
     async def set_time(self, ts: datetime) -> None:
         await self.send_packet(set_time.set_time_packet(ts))
