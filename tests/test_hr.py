@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from freezegun import freeze_time
 
-from colmi_r02_client.heart_rate import (
+from colmi_r02_client.hr import (
     HeartRateLogParser,
     HeartRateLog,
     NoData,

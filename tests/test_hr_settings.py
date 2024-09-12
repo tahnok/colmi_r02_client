@@ -1,4 +1,4 @@
-from colmi_r02_client.heart_rate_log_settings import parse_heart_rate_log_settings, HeartRateLogSettings
+from colmi_r02_client.hr_settings import parse_heart_rate_log_settings, HeartRateLogSettings
 
 
 def test_parse():

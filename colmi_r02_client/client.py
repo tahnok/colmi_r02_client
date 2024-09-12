@@ -11,12 +11,12 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from colmi_r02_client import (
     battery,
-    real_time_heart_rate,
+    real_time_hr,
     steps,
     set_time,
     blink_twice,
-    heart_rate,
-    heart_rate_log_settings,
+    hr,
+    hr_settings,
 )
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -41,12 +41,12 @@ def log_packet(packet: bytearray) -> None:
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
-    real_time_heart_rate.CMD_START_HEART_RATE: real_time_heart_rate.parse_heart_rate,
-    real_time_heart_rate.CMD_STOP_HEART_RATE: empty_parse,
+    real_time_hr.CMD_START_HEART_RATE: real_time_hr.parse_heart_rate,
+    real_time_hr.CMD_STOP_HEART_RATE: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
-    heart_rate.CMD_READ_HEART_RATE: heart_rate.HeartRateLogParser().parse,
+    hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
-    heart_rate_log_settings.CMD_HEART_RATE_LOG_SETTINGS: heart_rate_log_settings.parse_heart_rate_log_settings,
+    hr_settings.CMD_HEART_RATE_LOG_SETTINGS: hr_settings.parse_heart_rate_log_settings,
 }
 """
 TODO put these somewhere nice
@@ -123,15 +123,14 @@ class Client:
         return result
 
     async def get_realtime_heart_rate(self) -> list[int]:
-        await self.send_packet(real_time_heart_rate.START_HEART_RATE_PACKET)
-        print("wrote HR reading packet, waiting...")
+        await self.send_packet(real_time_hr.START_HEART_RATE_PACKET)
 
         valid_hr: list[int] = []
         tries = 0
         while len(valid_hr) < 6 and tries < 20:
             try:
                 data = await asyncio.wait_for(
-                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(),
+                    self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
                     timeout=2,
                 )
                 if data["error_code"] == 1:
@@ -142,15 +141,15 @@ class Client:
             except TimeoutError:
                 print(".")
                 tries += 1
-                await self.send_packet(real_time_heart_rate.CONTINUE_HEART_RATE_PACKET)
+                await self.send_packet(real_time_hr.CONTINUE_HEART_RATE_PACKET)
 
         await self.send_packet(
-            real_time_heart_rate.STOP_HEART_RATE_PACKET,
+            real_time_hr.STOP_HEART_RATE_PACKET,
         )
         return valid_hr
 
     async def get_realtime_spo2(self) -> list[int]:
-        await self.send_packet(real_time_heart_rate.START_SPO2_PACKET)
+        await self.send_packet(real_time_hr.START_SPO2_PACKET)
         print("wrote SPO2 reading packet, waiting...")
 
         valid_spo2: list[int] = []
@@ -158,7 +157,7 @@ class Client:
         while len(valid_spo2) < 6 and tries < 20:
             try:
                 data = await asyncio.wait_for(
-                    self.queues[real_time_heart_rate.CMD_START_HEART_RATE].get(),
+                    self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
                     timeout=2,
                 )
                 if data["error_code"] == 1:
@@ -171,7 +170,7 @@ class Client:
                 tries += 1
 
         await self.send_packet(
-            real_time_heart_rate.STOP_SPO2_PACKET,
+            real_time_hr.STOP_SPO2_PACKET,
         )
         return valid_spo2
 
@@ -199,18 +198,18 @@ class Client:
 
         return data
 
-    async def get_heart_rate_log(self, target: datetime | None = None) -> heart_rate.HeartRateLog | heart_rate.NoData:
+    async def get_heart_rate_log(self, target: datetime | None = None) -> hr.HeartRateLog | hr.NoData:
         if target is None:
             target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
-        await self.send_packet(heart_rate.read_heart_rate_packet(target))
+        await self.send_packet(hr.read_heart_rate_packet(target))
         return await asyncio.wait_for(
-            self.queues[heart_rate.CMD_READ_HEART_RATE].get(),
+            self.queues[hr.CMD_READ_HEART_RATE].get(),
             timeout=2,
         )
 
-    async def get_heart_rate_log_settings(self) -> heart_rate_log_settings.HeartRateLogSettings:
-        await self.send_packet(heart_rate_log_settings.READ_HEART_RATE_LOG_SETTINGS_PACKET)
+    async def get_heart_rate_log_settings(self) -> hr_settings.HeartRateLogSettings:
+        await self.send_packet(hr_settings.READ_HEART_RATE_LOG_SETTINGS_PACKET)
         return await asyncio.wait_for(
-            self.queues[heart_rate_log_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
+            self.queues[hr_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
             timeout=2,
         )

@@ -11,7 +11,7 @@ import asyncclick as click
 from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
-from colmi_r02_client.heart_rate import HeartRateLog
+from colmi_r02_client.hr import HeartRateLog
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -99,6 +99,16 @@ async def get_heart_rate_log_settings(client: Client) -> None:
     click.echo("heart rate log settings:")
     click.echo(await client.get_heart_rate_log_settings())
 
+@cli_client.command()
+@click.pass_obj
+async def get_real_time_heart_rate(client: Client) -> None:
+    """Get real time heart rate.
+
+    TODO: add number of readings
+    """
+
+    click.echo("Starting reading, please wait.")
+    click.echo(await client.get_realtime_heart_rate())
 
 DEVICE_NAME_PREFIXES = [
     "R01",
