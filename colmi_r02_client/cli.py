@@ -25,9 +25,13 @@ logger = logging.getLogger(__name__)
     default=False,
     help="Write all received packets to a file",
 )
-@click.option("--address", required=True, help="Bluetooth address")
+@click.option("--address", required=False, help="Bluetooth address")
+@click.option("--name", required=False, help="Bluetooth name of the device, slower but will work on macOS")
 @click.pass_context
-async def cli_client(context: click.Context, debug: bool, record: bool, address: str) -> None:
+async def cli_client(context: click.Context, debug: bool, record: bool, address: str | None, name: str | None) -> None:
+    if (address is None and name is None) or (address is not None and name is not None):
+        context.fail("You must pass either the address option(preferred) or the name option, but not both")
+
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("bleak").setLevel(logging.INFO)
@@ -39,6 +43,15 @@ async def cli_client(context: click.Context, debug: bool, record: bool, address:
         captures.mkdir(exist_ok=True)
         record_to = captures / Path(f"colmi_response_capture_{now}.bin")
         logger.info(f"Recording responses to {record_to}")
+
+    if name is not None:
+        devices = await BleakScanner.discover()
+        found = next((x for x in devices if x.name == name), None)
+        if found is None:
+            context.fail("No device found with given name")
+        address = found.address
+
+    assert address
 
     client = Client(address, record_to=record_to)
 

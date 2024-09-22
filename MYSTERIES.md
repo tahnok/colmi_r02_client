@@ -6,6 +6,9 @@ I got this one when doing a real time heart rate reading, but I don't think this
 
 bytearray(b's\x0c\x15\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x94'
 
+I got another 's' packet while asking for battery level
+
+bytearray(b's\x0c+\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab')
 
 ---
 
