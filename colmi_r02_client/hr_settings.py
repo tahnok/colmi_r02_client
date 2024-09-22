@@ -2,6 +2,8 @@
 Heart rate log settings for controlling if the ring should record heart rate periodically, and if so how often to record.
 
 An odd packet set up as it's either a query for the current settings or trying to set the settings.
+
+I don't know what byte 1 in the response is.
 """
 
 from dataclasses import dataclass
@@ -17,7 +19,7 @@ READ_HEART_RATE_LOG_SETTINGS_PACKET = make_packet(CMD_HEART_RATE_LOG_SETTINGS, b
 class HeartRateLogSettings:
     enabled: bool
     interval: int
-    """Interval in unknown units"""
+    """Interval in minutes"""
 
 
 def parse_heart_rate_log_settings(packet: bytearray) -> HeartRateLogSettings:
@@ -26,4 +28,4 @@ def parse_heart_rate_log_settings(packet: bytearray) -> HeartRateLogSettings:
     """
     assert packet[0] == CMD_HEART_RATE_LOG_SETTINGS
 
-    return HeartRateLogSettings(enabled=bool(packet[1]), interval=packet[2])
+    return HeartRateLogSettings(enabled=bool(packet[2]), interval=packet[3])
