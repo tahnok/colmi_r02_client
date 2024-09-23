@@ -21,7 +21,6 @@ Inspired by https://github.com/atc1441/ATC_RF03_Ring/
 # TODO
 
 - add more CLI functionlity
-    - set hr log frequency
     - pretty print HR and steps
     - sync all data to a file or sqlite db?
 
