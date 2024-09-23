@@ -34,10 +34,7 @@
                     <a class="function" href="#make_packet">make_packet</a>
             </li>
             <li>
-                    <a class="function" href="#crc">crc</a>
-            </li>
-            <li>
-                    <a class="function" href="#send_packet">send_packet</a>
+                    <a class="function" href="#checksum">checksum</a>
             </li>
     </ul>
 
@@ -60,34 +57,37 @@
 
                         <label class="view-source-button" for="mod-packet-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span> <span class="nn">bleak</span> <span class="kn">import</span> <span class="n">BleakClient</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">from</span> <span class="nn">bleak.backends.characteristic</span> <span class="kn">import</span> <span class="n">BleakGATTCharacteristic</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="k">def</span> <span class="nf">make_packet</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytearray</span><span class="p">:</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">    Make a well formed packet from a command key and optional sub data.</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="k">def</span> <span class="nf">make_packet</span><span class="p">(</span><span class="n">command_key</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytearray</span><span class="p">:</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>    <span class="n">packet</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>    <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">command_key</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="k">if</span> <span class="n">sub_data</span><span class="p">:</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">14</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)):</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>            <span class="n">packet</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">    That means ensuring it&#39;s 16 bytes long and the last byte is a valid CRC.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">    command must be between 0 and 255 (inclusive)</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">    sub_data must have a len between 0 and 14</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">command</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">,</span> <span class="s2">&quot;Invalid command, must be between 0 and 255&quot;</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="n">packet</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">command</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="n">packet</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">crc</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="k">return</span> <span class="n">packet</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="k">if</span> <span class="n">sub_data</span><span class="p">:</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">14</span><span class="p">,</span> <span class="s2">&quot;Sub data must be less than 14 bytes&quot;</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)):</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>            <span class="n">packet</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 </span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="k">def</span> <span class="nf">crc</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">255</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="n">packet</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="k">return</span> <span class="n">packet</span>
 </span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">send_packet</span><span class="p">(</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="n">client</span><span class="p">:</span> <span class="n">BleakClient</span><span class="p">,</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="n">rx_char</span><span class="p">:</span> <span class="n">BleakGATTCharacteristic</span><span class="p">,</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">,</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">write_gatt_char</span><span class="p">(</span><span class="n">rx_char</span><span class="p">,</span> <span class="n">packet</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">    Packet checksum</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">    Add all the bytes together modulus 255</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">255</span>
 </span></pre></div>
 
 
@@ -97,70 +97,73 @@
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">make_packet</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">command_key</span><span class="p">:</span> <span class="nb">int</span>, </span><span class="param"><span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">bytearray</span>:</span></span>
+        <span class="name">make_packet</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">command</span><span class="p">:</span> <span class="nb">int</span>, </span><span class="param"><span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">bytearray</span>:</span></span>
 
                 <label class="view-source-button" for="make_packet-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#make_packet"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="make_packet-6"><a href="#make_packet-6"><span class="linenos"> 6</span></a><span class="k">def</span> <span class="nf">make_packet</span><span class="p">(</span><span class="n">command_key</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytearray</span><span class="p">:</span>
-</span><span id="make_packet-7"><a href="#make_packet-7"><span class="linenos"> 7</span></a>    <span class="n">packet</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
-</span><span id="make_packet-8"><a href="#make_packet-8"><span class="linenos"> 8</span></a>    <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">command_key</span>
-</span><span id="make_packet-9"><a href="#make_packet-9"><span class="linenos"> 9</span></a>
-</span><span id="make_packet-10"><a href="#make_packet-10"><span class="linenos">10</span></a>    <span class="k">if</span> <span class="n">sub_data</span><span class="p">:</span>
-</span><span id="make_packet-11"><a href="#make_packet-11"><span class="linenos">11</span></a>        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">14</span>
-</span><span id="make_packet-12"><a href="#make_packet-12"><span class="linenos">12</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)):</span>
-</span><span id="make_packet-13"><a href="#make_packet-13"><span class="linenos">13</span></a>            <span class="n">packet</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="make_packet-2"><a href="#make_packet-2"><span class="linenos"> 2</span></a><span class="k">def</span> <span class="nf">make_packet</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sub_data</span><span class="p">:</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytearray</span><span class="p">:</span>
+</span><span id="make_packet-3"><a href="#make_packet-3"><span class="linenos"> 3</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="make_packet-4"><a href="#make_packet-4"><span class="linenos"> 4</span></a><span class="sd">    Make a well formed packet from a command key and optional sub data.</span>
+</span><span id="make_packet-5"><a href="#make_packet-5"><span class="linenos"> 5</span></a>
+</span><span id="make_packet-6"><a href="#make_packet-6"><span class="linenos"> 6</span></a><span class="sd">    That means ensuring it&#39;s 16 bytes long and the last byte is a valid CRC.</span>
+</span><span id="make_packet-7"><a href="#make_packet-7"><span class="linenos"> 7</span></a>
+</span><span id="make_packet-8"><a href="#make_packet-8"><span class="linenos"> 8</span></a><span class="sd">    command must be between 0 and 255 (inclusive)</span>
+</span><span id="make_packet-9"><a href="#make_packet-9"><span class="linenos"> 9</span></a><span class="sd">    sub_data must have a len between 0 and 14</span>
+</span><span id="make_packet-10"><a href="#make_packet-10"><span class="linenos">10</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="make_packet-11"><a href="#make_packet-11"><span class="linenos">11</span></a>    <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">command</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">,</span> <span class="s2">&quot;Invalid command, must be between 0 and 255&quot;</span>
+</span><span id="make_packet-12"><a href="#make_packet-12"><span class="linenos">12</span></a>    <span class="n">packet</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+</span><span id="make_packet-13"><a href="#make_packet-13"><span class="linenos">13</span></a>    <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">command</span>
 </span><span id="make_packet-14"><a href="#make_packet-14"><span class="linenos">14</span></a>
-</span><span id="make_packet-15"><a href="#make_packet-15"><span class="linenos">15</span></a>    <span class="n">packet</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">crc</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
-</span><span id="make_packet-16"><a href="#make_packet-16"><span class="linenos">16</span></a>
-</span><span id="make_packet-17"><a href="#make_packet-17"><span class="linenos">17</span></a>    <span class="k">return</span> <span class="n">packet</span>
+</span><span id="make_packet-15"><a href="#make_packet-15"><span class="linenos">15</span></a>    <span class="k">if</span> <span class="n">sub_data</span><span class="p">:</span>
+</span><span id="make_packet-16"><a href="#make_packet-16"><span class="linenos">16</span></a>        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">14</span><span class="p">,</span> <span class="s2">&quot;Sub data must be less than 14 bytes&quot;</span>
+</span><span id="make_packet-17"><a href="#make_packet-17"><span class="linenos">17</span></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_data</span><span class="p">)):</span>
+</span><span id="make_packet-18"><a href="#make_packet-18"><span class="linenos">18</span></a>            <span class="n">packet</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</span><span id="make_packet-19"><a href="#make_packet-19"><span class="linenos">19</span></a>
+</span><span id="make_packet-20"><a href="#make_packet-20"><span class="linenos">20</span></a>    <span class="n">packet</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+</span><span id="make_packet-21"><a href="#make_packet-21"><span class="linenos">21</span></a>
+</span><span id="make_packet-22"><a href="#make_packet-22"><span class="linenos">22</span></a>    <span class="k">return</span> <span class="n">packet</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Make a well formed packet from a command key and optional sub data.</p>
+
+<p>That means ensuring it's 16 bytes long and the last byte is a valid CRC.</p>
+
+<p>command must be between 0 and 255 (inclusive)
+sub_data must have a len between 0 and 14</p>
+</div>
+
 
                 </section>
-                <section id="crc">
-                            <input id="crc-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="checksum">
+                            <input id="checksum-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">crc</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span></span><span class="return-annotation">) -> <span class="nb">int</span>:</span></span>
+        <span class="name">checksum</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span></span><span class="return-annotation">) -> <span class="nb">int</span>:</span></span>
 
-                <label class="view-source-button" for="crc-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="checksum-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#crc"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="crc-20"><a href="#crc-20"><span class="linenos">20</span></a><span class="k">def</span> <span class="nf">crc</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="crc-21"><a href="#crc-21"><span class="linenos">21</span></a>    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">255</span>
+    <a class="headerlink" href="#checksum"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="checksum-25"><a href="#checksum-25"><span class="linenos">25</span></a><span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="checksum-26"><a href="#checksum-26"><span class="linenos">26</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="checksum-27"><a href="#checksum-27"><span class="linenos">27</span></a><span class="sd">    Packet checksum</span>
+</span><span id="checksum-28"><a href="#checksum-28"><span class="linenos">28</span></a>
+</span><span id="checksum-29"><a href="#checksum-29"><span class="linenos">29</span></a><span class="sd">    Add all the bytes together modulus 255</span>
+</span><span id="checksum-30"><a href="#checksum-30"><span class="linenos">30</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="checksum-31"><a href="#checksum-31"><span class="linenos">31</span></a>
+</span><span id="checksum-32"><a href="#checksum-32"><span class="linenos">32</span></a>    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">255</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Packet checksum</p>
 
-                </section>
-                <section id="send_packet">
-                            <input id="send_packet-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-            
-        <span class="def">async def</span>
-        <span class="name">send_packet</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">client</span><span class="p">:</span> <span class="n">bleak</span><span class="o">.</span><span class="n">BleakClient</span>,</span><span class="param">	<span class="n">rx_char</span><span class="p">:</span> <span class="n">bleak</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">characteristic</span><span class="o">.</span><span class="n">BleakGATTCharacteristic</span>,</span><span class="param">	<span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+<p>Add all the bytes together modulus 255</p>
+</div>
 
-                <label class="view-source-button" for="send_packet-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#send_packet"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="send_packet-24"><a href="#send_packet-24"><span class="linenos">24</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">send_packet</span><span class="p">(</span>
-</span><span id="send_packet-25"><a href="#send_packet-25"><span class="linenos">25</span></a>    <span class="n">client</span><span class="p">:</span> <span class="n">BleakClient</span><span class="p">,</span>
-</span><span id="send_packet-26"><a href="#send_packet-26"><span class="linenos">26</span></a>    <span class="n">rx_char</span><span class="p">:</span> <span class="n">BleakGATTCharacteristic</span><span class="p">,</span>
-</span><span id="send_packet-27"><a href="#send_packet-27"><span class="linenos">27</span></a>    <span class="n">packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">,</span>
-</span><span id="send_packet-28"><a href="#send_packet-28"><span class="linenos">28</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="send_packet-29"><a href="#send_packet-29"><span class="linenos">29</span></a>    <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">write_gatt_char</span><span class="p">(</span><span class="n">rx_char</span><span class="p">,</span> <span class="n">packet</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</span></pre></div>
-
-
-    
 
                 </section>
     </main>
