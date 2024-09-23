@@ -114,6 +114,25 @@ async def get_heart_rate_log_settings(client: Client) -> None:
 
 
 @cli_client.command()
+@click.option("--enable/--disable", default=True, show_default=True, help="Logging status")
+@click.option(
+    "--interval",
+    type=click.IntRange(0, 255),
+    help="Interval in minutes to measure heart rate",
+    default=60,
+    show_default=True,
+)
+@click.pass_obj
+async def set_heart_rate_log_settings(client: Client, enable: bool, interval: int) -> None:
+    """Get heart rate log settings"""
+
+    click.echo("Changing heart rate log settings")
+    await client.set_heart_rate_log_settings(enable, interval)
+    click.echo(await client.get_heart_rate_log_settings())
+    click.echo("Done")
+
+
+@cli_client.command()
 @click.pass_obj
 async def get_real_time_heart_rate(client: Client) -> None:
     """Get real time heart rate.

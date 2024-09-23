@@ -200,3 +200,12 @@ class Client:
             self.queues[hr_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
             timeout=2,
         )
+
+    async def set_heart_rate_log_settings(self, enabled: bool, interval: int) -> None:
+        await self.send_packet(hr_settings.hr_log_settings_packet(hr_settings.HeartRateLogSettings(enabled, interval)))
+
+        # clear response from queue as it's unused and wrong
+        await asyncio.wait_for(
+            self.queues[hr_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
+            timeout=2,
+        )
