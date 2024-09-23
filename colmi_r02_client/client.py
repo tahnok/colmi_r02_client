@@ -118,6 +118,7 @@ class Client:
                 f.write(b"\n")
 
     async def send_packet(self, packet: bytearray) -> None:
+        logger.debug(f"Sending packet: {packet}")
         await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
 
     async def get_battery(self) -> battery.BatteryInfo:
