@@ -27,6 +27,10 @@ pytest-asyncio = "^0.24.0"
 [tool.poetry.group.doc.dependencies]
 pdoc = "^14.6.1"
 
+
+[tool.poetry.group.nvim-lsp.dependencies]
+pyright = "^1.1.382.post0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
