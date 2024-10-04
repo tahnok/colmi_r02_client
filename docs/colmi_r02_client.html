@@ -21,6 +21,15 @@
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
 
+            <h2>Contents</h2>
+            <ul>
+  <li><a href="#how-to-buy">How to buy</a></li>
+  <li><a href="#reverse-engineering-status">Reverse engineering status</a></li>
+  <li><a href="#planned-feature">Planned Feature</a></li>
+  <li><a href="#getting-started">Getting started</a></li>
+  <li><a href="#communication-protocol-details">Communication Protocol Details</a></li>
+</ul>
+
 
             <h2>Submodules</h2>
             <ul>
@@ -50,11 +59,147 @@
                     <h1 class="modulename">
 colmi_r02_client    </h1>
 
-                        <div class="docstring"><p>This is a python client for the Colmi R02 Smart ring.</p>
+                        <div class="docstring"><p>Open source python client to read your data from the Colmi R02 family of Smart Rings. 100% open source, 100% offline.</p>
 
-<p>You can find it for like ~25USD$ on Aliexpress.</p>
+<p>The colmi R02 ring includes the following sensors:</p>
 
-<p><a href="https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/">Hackaday coverage</a></p>
+<ul>
+<li>Accelerometer
+<ul>
+<li>step tracking</li>
+<li>sleep tracking</li>
+<li>gestures (maybe...?)</li>
+</ul></li>
+<li>Heart Rate (HR)</li>
+<li>Blood Oxygen (SPO2)</li>
+</ul>
+
+<p>I found out about this from atc1441 and his work on <a href="https://github.com/atc1441/ATC_RF03_Ring/">ATC_RF03</a> and this 
+<a href="https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/">Hackaday coverage</a></p>
+
+<p>Got questions or ideas? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> or <a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></p>
+
+<p>Are you hiring? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a></p>
+
+<h2 id="how-to-buy">How to buy</h2>
+
+<p>You can get it on <a href="https://www.aliexpress.com/item/1005006631448993.html">here on AliExpress</a>. If that link is dead try searching for "COLMI R02", I got mine from "Colmi official store". It cost me $CAD 22 shipped.</p>
+
+<h2 id="reverse-engineering-status">Reverse engineering status</h2>
+
+<ul>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Real time heart rate and SPO2</li>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Step logs (still don't quite understand how the day is split up)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Heart rate logs (periodic measurement)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Set ring time</li>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Set HR log frequency</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> SPO2 logs</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Sleep tracking</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> "Stress" measurement</li>
+</ul>
+
+<h2 id="planned-feature">Planned Feature</h2>
+
+<ul>
+<li>add more CLI functionlity</li>
+<li>pretty print HR and steps</li>
+<li>sync all data to a file or sqlite db</li>
+<li>simple web interface</li>
+</ul>
+
+<h2 id="getting-started">Getting started</h2>
+
+<h3 id="using-the-command-line">Using the command line</h3>
+
+<p>If you don't know python that well, I <strong>highly</strong> recommend you install <a href="https://pipx.pypa.io/stable/installation/">pipx</a>. It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once install you can do</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>pipx<span class="w"> </span>install<span class="w"> </span>git+https://github.com/tahnok/colmi_r02_client
+</code></pre>
+</div>
+
+<p>Once that is done you can look for nearby rings using</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>colmi_r02_util<span class="w"> </span>scan
+</code></pre>
+</div>
+
+<pre><code>Found device(s)
+                Name  | Address
+--------------------------------------------
+            R02_341C  |  70:CB:0D:D0:34:1C
+</code></pre>
+
+<p>Once you have your address you can use it to do things like get real time heart rate</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>colmi_r02_client<span class="w"> </span>--address<span class="o">=</span><span class="m">70</span>:CB:0D:D0:34:1C<span class="w"> </span>get-real-time-heart-rate
+</code></pre>
+</div>
+
+<pre><code>Starting reading, please wait.
+[81, 81, 79, 79, 79, 79]
+</code></pre>
+
+<p>The most up to date and comprehensive help for the command line can be found running</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>colmi_r02_client<span class="w"> </span>--help
+</code></pre>
+</div>
+
+<pre><code>Usage: colmi_r02_client [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --debug / --no-debug
+  --record / --no-record  Write all received packets to a file
+  --address TEXT          Bluetooth address
+  --name TEXT             Bluetooth name of the device, slower but will work
+                          on macOS
+  --help                  Show this message and exit.
+
+Commands:
+  get-heart-rate-log           Get heart rate for given date
+  get-heart-rate-log-settings  Get heart rate log settings
+  get-real-time-heart-rate     Get real time heart rate.
+  info                         Get device info and battery level
+  set-heart-rate-log-settings  Get heart rate log settings
+  set-time                     Set the time on the ring, required if you...
+</code></pre>
+
+<h3 id="with-the-library-sdk">With the library / sdk</h3>
+
+<p>You can use the <code><a href="colmi_r02_client/client.html">colmi_r02_client.client</a></code> class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visable on <a href="https://tahnok.github.io/colmi_r02_client/">the docs site</a></p>
+
+<h2 id="communication-protocol-details">Communication Protocol Details</h2>
+
+<p>I've kept a lab notebook style stream of consciousness notes on <a href="https://notes.tahnok.ca/">https://notes.tahnok.ca/</a>, starting with <a href="https://notes.tahnok.ca/blog/2024-07-07+Smart+Ring+Hacking">2024-07-07 Smart Ring Hacking</a> and eventually getting put under one folder. That's the best source for all the raw stuff.</p>
+
+<p>At a high level though, you can talk to and read from the ring using BLE. There's no binding or security keys required to get started. (that's kind of bad, but the range on the ring is really tiny and I'm not too worried about someone getting my steps or heart rate information. Up to you).</p>
+
+<p>The ring has a ble GATT service with the UUID <code>6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E</code>. It has two important characteristics:</p>
+
+<ol>
+<li>RX: <code>6E400002-B5A3-F393-E0A9-E50E24DCCA9E</code>, which you write to</li>
+<li>TX: <code>6E400003-B5A3-F393-E0A9-E50E24DCCA9E</code>, which you can "subscribe" to and is where the ring responds to packets you have sent.</li>
+</ol>
+
+<p>This closely ressembles the <a href="https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth_services/services/nus.html">Nordic UART Service</a> and UART/Serial communications in general.</p>
+
+<h3 id="packet-structure">Packet structure</h3>
+
+<p>The ring communicates in 16 byte packets for both sending and receiving. The first byte of the packet is always a command/tag/type. For example, the packet you send to ask for the battery level starts with <code>0x03</code> and the response packet also starts with <code>0x03</code>.</p>
+
+<p>The last byte of the packet is always a checksum/crc. This value is calculated by summing up the other 15 bytes in the packet and taking the result modulo 255. See <code><a href="colmi_r02_client/packet.html#checksum">colmi_r02_client.packet.checksum</a></code></p>
+
+<p>The middle 14 bytes are the "subdata" or payload data. Some requests (like <code><a href="colmi_r02_client/set_time.html#set_time_packet">colmi_r02_client.set_time.set_time_packet</a></code>) include additional data. Almost all responses use the subdata to return the data you asked for.</p>
+
+<p>Some requests result in multiple responses that you have to consider together to get the data. <code><a href="colmi_r02_client/steps.html#SportDetailParser">colmi_r02_client.steps.SportDetailParser</a></code> is an example of this behaviour.</p>
+
+<p>If you want to know the actual packet structure for a given feature's request or response, take a look at the source code for that feature. I've tried to make it pretty easy to follow even if you don't know python very well. There are also some tests that you can refer to for validated request/response pairs and human readable interpretations of that data.</p>
+
+<p>Got questions or ideas? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> or <a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></p>
 </div>
 
                         <input id="mod-colmi_r02_client-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -62,12 +207,9 @@ colmi_r02_client    </h1>
                         <label class="view-source-button" for="mod-colmi_r02_client-view-source"><span>View Source</span></label>
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">1</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos">2</span></a><span class="sd">This is a python client for the Colmi R02 Smart ring.</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos">3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos">4</span></a><span class="sd">You can find it for like ~25USD$ on Aliexpress.</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos">5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos">6</span></a><span class="sd">[Hackaday coverage](https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/)</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">7</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">2</span></a><span class="sd">.. include:: ../README.md</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">3</span></a><span class="sd">    :start-line: 2</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">4</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
