@@ -4,6 +4,8 @@ Open source python client to read your data from the Colmi R02 family of Smart R
 
 ## What is the Colmi R02?
 
+<img src="https://cdn.tahnok.ca/u/banner_colmi_r02.png" alt="picture of the colmi r02 smart ring in shiny black. The electronics can be seen through the epoxy inside the ring" width="100%"/>
+
 It's a cheap (as in $20) "smart ring" / fitness wearable that includes the following sensors:
 
  - Accelerometer
