@@ -2,7 +2,9 @@
 
 Open source python client to read your data from the Colmi R02 family of Smart Rings. 100% open source, 100% offline.
 
-The colmi R02 ring includes the following sensors:
+## What is the Colmi R02?
+
+It's a cheap (as in $20) "smart ring" / fitness wearable that includes the following sensors:
 
  - Accelerometer
     - step tracking
@@ -11,7 +13,7 @@ The colmi R02 ring includes the following sensors:
  - Heart Rate (HR)
  - Blood Oxygen (SPO2)
 
-I found out about this from atc1441 and his work on [ATC_RF03](https://github.com/atc1441/ATC_RF03_Ring/) and this 
+I found out about the ring from atc1441 and his work on [ATC_RF03](https://github.com/atc1441/ATC_RF03_Ring/) and the 
 [Hackaday coverage](https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/)
 
 Got questions or ideas? [Send me an email](mailto:tahnok+colmir02@gmail.com) or [open an issue](https://github.com/tahnok/colmi_r02_client/issues/new)
@@ -26,7 +28,7 @@ You can get it on [here on AliExpress](https://www.aliexpress.com/item/100500663
 
  - [x] Real time heart rate and SPO2
  - [x] Step logs (still don't quite understand how the day is split up)
- - [x] Heart rate logs (periodic measurement)
+ - [x] Heart rate logs (aka periodic measurement)
  - [x] Set ring time
  - [x] Set HR log frequency
  - [ ] SPO2 logs
@@ -44,7 +46,7 @@ You can get it on [here on AliExpress](https://www.aliexpress.com/item/100500663
 
 ### Using the command line
 
-If you don't know python that well, I **highly** recommend you install [pipx](https://pipx.pypa.io/stable/installation/). It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once install you can do
+If you don't know python that well, I **highly** recommend you install [pipx](https://pipx.pypa.io/stable/installation/). It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once installed you can do
 
 ```sh
 pipx install git+https://github.com/tahnok/colmi_r02_client
@@ -102,7 +104,7 @@ Commands:
 
 ### With the library / sdk
 
-You can use the `colmi_r02_client.client` class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visable on [the docs site](https://tahnok.github.io/colmi_r02_client/)
+You can use the `colmi_r02_client.client` class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visible on [the docs site](https://tahnok.github.io/colmi_r02_client/)
 
 ## Communication Protocol Details
 

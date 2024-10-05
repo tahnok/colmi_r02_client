@@ -23,6 +23,7 @@
 
             <h2>Contents</h2>
             <ul>
+  <li><a href="#what-is-the-colmi-r02">What is the Colmi R02?</a></li>
   <li><a href="#how-to-buy">How to buy</a></li>
   <li><a href="#reverse-engineering-status">Reverse engineering status</a></li>
   <li><a href="#planned-feature">Planned Feature</a></li>
@@ -61,7 +62,9 @@ colmi_r02_client    </h1>
 
                         <div class="docstring"><p>Open source python client to read your data from the Colmi R02 family of Smart Rings. 100% open source, 100% offline.</p>
 
-<p>The colmi R02 ring includes the following sensors:</p>
+<h2 id="what-is-the-colmi-r02">What is the Colmi R02?</h2>
+
+<p>It's a cheap (as in $20) "smart ring" / fitness wearable that includes the following sensors:</p>
 
 <ul>
 <li>Accelerometer
@@ -74,7 +77,7 @@ colmi_r02_client    </h1>
 <li>Blood Oxygen (SPO2)</li>
 </ul>
 
-<p>I found out about this from atc1441 and his work on <a href="https://github.com/atc1441/ATC_RF03_Ring/">ATC_RF03</a> and this 
+<p>I found out about the ring from atc1441 and his work on <a href="https://github.com/atc1441/ATC_RF03_Ring/">ATC_RF03</a> and the 
 <a href="https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/">Hackaday coverage</a></p>
 
 <p>Got questions or ideas? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> or <a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></p>
@@ -90,7 +93,7 @@ colmi_r02_client    </h1>
 <ul>
 <li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Real time heart rate and SPO2</li>
 <li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Step logs (still don't quite understand how the day is split up)</li>
-<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Heart rate logs (periodic measurement)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Heart rate logs (aka periodic measurement)</li>
 <li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Set ring time</li>
 <li><input type="checkbox" class="task-list-item-checkbox" checked disabled> Set HR log frequency</li>
 <li><input type="checkbox" class="task-list-item-checkbox" disabled> SPO2 logs</li>
@@ -111,7 +114,7 @@ colmi_r02_client    </h1>
 
 <h3 id="using-the-command-line">Using the command line</h3>
 
-<p>If you don't know python that well, I <strong>highly</strong> recommend you install <a href="https://pipx.pypa.io/stable/installation/">pipx</a>. It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once install you can do</p>
+<p>If you don't know python that well, I <strong>highly</strong> recommend you install <a href="https://pipx.pypa.io/stable/installation/">pipx</a>. It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once installed you can do</p>
 
 <div class="pdoc-code codehilite">
 <pre><span></span><code>pipx<span class="w"> </span>install<span class="w"> </span>git+https://github.com/tahnok/colmi_r02_client
@@ -170,7 +173,7 @@ Commands:
 
 <h3 id="with-the-library-sdk">With the library / sdk</h3>
 
-<p>You can use the <code><a href="colmi_r02_client/client.html">colmi_r02_client.client</a></code> class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visable on <a href="https://tahnok.github.io/colmi_r02_client/">the docs site</a></p>
+<p>You can use the <code><a href="colmi_r02_client/client.html">colmi_r02_client.client</a></code> class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visible on <a href="https://tahnok.github.io/colmi_r02_client/">the docs site</a></p>
 
 <h2 id="communication-protocol-details">Communication Protocol Details</h2>
 
