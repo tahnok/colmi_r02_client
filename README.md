@@ -39,16 +39,16 @@ You can get it on [here on AliExpress](https://www.aliexpress.com/item/100500663
 
 ## Planned Feature
 
- - add more CLI functionlity
+ - add more CLI functionality
  - pretty print HR and steps
- - sync all data to a file or sqlite db
+ - sync all data to a file or SQLite db
  - simple web interface
 
 ## Getting started
 
 ### Using the command line
 
-If you don't know python that well, I **highly** recommend you install [pipx](https://pipx.pypa.io/stable/installation/). It's puprpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once installed you can do
+If you don't know python that well, I **highly** recommend you install [pipx](https://pipx.pypa.io/stable/installation/). It's purpose built for managing python packages intended to be used as standalone programs and it will keep your computer safe from the pitfalls of python packaging. Once installed you can do
 
 ```sh
 pipx install git+https://github.com/tahnok/colmi_r02_client
@@ -104,7 +104,7 @@ Commands:
   set-time                     Set the time on the ring, required if you...
 ```
 
-### With the library / sdk
+### With the library / SDK
 
 You can use the `colmi_r02_client.client` class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visible on [the docs site](https://tahnok.github.io/colmi_r02_client/)
 
@@ -114,12 +114,12 @@ I've kept a lab notebook style stream of consciousness notes on https://notes.ta
 
 At a high level though, you can talk to and read from the ring using BLE. There's no binding or security keys required to get started. (that's kind of bad, but the range on the ring is really tiny and I'm not too worried about someone getting my steps or heart rate information. Up to you).
 
-The ring has a ble GATT service with the UUID `6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E`. It has two important characteristics:
+The ring has a BLE GATT service with the UUID `6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E`. It has two important characteristics:
 
  1. RX: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`, which you write to
  2. TX: `6E400003-B5A3-F393-E0A9-E50E24DCCA9E`, which you can "subscribe" to and is where the ring responds to packets you have sent.
 
-This closely ressembles the [Nordic UART Service](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth_services/services/nus.html) and UART/Serial communications in general.
+This closely resembles the [Nordic UART Service](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth_services/services/nus.html) and UART/Serial communications in general.
 
 ### Packet structure
 
