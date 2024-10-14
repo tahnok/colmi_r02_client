@@ -5,7 +5,7 @@ def make_packet(command: int, sub_data: bytearray | None = None) -> bytearray:
     That means ensuring it's 16 bytes long and the last byte is a valid CRC.
 
     command must be between 0 and 255 (inclusive)
-    sub_data must have a len between 0 and 14
+    sub_data must have a length between 0 and 14
     """
     assert 0 <= command <= 255, "Invalid command, must be between 0 and 255"
     packet = bytearray(16)

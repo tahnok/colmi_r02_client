@@ -37,14 +37,14 @@ def parse_heart_rate_log_settings(packet: bytearray) -> HeartRateLogSettings:
     elif raw_enabled == 2:
         enabled = False
     else:
-        logger.warning(f"Unexpacted value in enabled byte {raw_enabled}, defaulting to false")
+        logger.warning(f"Unexpected value in enabled byte {raw_enabled}, defaulting to false")
         enabled = False
 
     return HeartRateLogSettings(enabled=enabled, interval=packet[3])
 
 
 def hr_log_settings_packet(settings: HeartRateLogSettings) -> bytearray:
-    assert 0 < settings.interval < 256, "Interal must be between 0 and 255"
+    assert 0 < settings.interval < 256, "Interval must be between 0 and 255"
     enabled = 1 if settings.enabled else 2
     sub_data = bytearray([2, enabled, settings.interval])
     return make_packet(CMD_HEART_RATE_LOG_SETTINGS, sub_data)
