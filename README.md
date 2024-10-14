@@ -18,7 +18,11 @@ It's a cheap (as in $20) "smart ring" / fitness wearable that includes the follo
 I found out about the ring from atc1441 and his work on [ATC_RF03](https://github.com/atc1441/ATC_RF03_Ring/) and the 
 [Hackaday coverage](https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/)
 
-Got questions or ideas? [Send me an email](mailto:tahnok+colmir02@gmail.com) or [open an issue](https://github.com/tahnok/colmi_r02_client/issues/new)
+Got questions or ideas?
+
+ - [Send me an email](mailto:tahnok+colmir02@gmail.com) 
+ - [open an issue](https://github.com/tahnok/colmi_r02_client/issues/new)
+ - [join the discord](https://discord.gg/K4wvDqDZvn)
 
 Are you hiring? [Send me an email](mailto:tahnok+colmir02@gmail.com)
 
@@ -134,3 +138,8 @@ Some requests result in multiple responses that you have to consider together to
 If you want to know the actual packet structure for a given feature's request or response, take a look at the source code for that feature. I've tried to make it pretty easy to follow even if you don't know python very well. There are also some tests that you can refer to for validated request/response pairs and human readable interpretations of that data.
 
 Got questions or ideas? [Send me an email](mailto:tahnok+colmir02@gmail.com) or [open an issue](https://github.com/tahnok/colmi_r02_client/issues/new)
+
+## Other links
+
+ - https://github.com/Puxtril/colmi-docs
+ - gadgetbridge (open source android client for many smart devices) support [PR](https://codeberg.org/Freeyourgadget/Gadgetbridge/pulls/3896)

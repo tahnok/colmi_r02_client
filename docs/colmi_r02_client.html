@@ -29,6 +29,7 @@
   <li><a href="#planned-feature">Planned Feature</a></li>
   <li><a href="#getting-started">Getting started</a></li>
   <li><a href="#communication-protocol-details">Communication Protocol Details</a></li>
+  <li><a href="#other-links">Other links</a></li>
 </ul>
 
 
@@ -82,7 +83,13 @@ colmi_r02_client    </h1>
 <p>I found out about the ring from atc1441 and his work on <a href="https://github.com/atc1441/ATC_RF03_Ring/">ATC_RF03</a> and the 
 <a href="https://hackaday.com/2024/06/16/new-part-day-a-hackable-smart-ring/">Hackaday coverage</a></p>
 
-<p>Got questions or ideas? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> or <a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></p>
+<p>Got questions or ideas?</p>
+
+<ul>
+<li><a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> </li>
+<li><a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></li>
+<li><a href="https://discord.gg/K4wvDqDZvn">join the discord</a></li>
+</ul>
 
 <p>Are you hiring? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a></p>
 
@@ -108,7 +115,7 @@ colmi_r02_client    </h1>
 <ul>
 <li>add more CLI functionality</li>
 <li>pretty print HR and steps</li>
-<li>sync all data to a file or sqlite db</li>
+<li>sync all data to a file or SQLite db</li>
 <li>simple web interface</li>
 </ul>
 
@@ -173,7 +180,7 @@ Commands:
   set-time                     Set the time on the ring, required if you...
 </code></pre>
 
-<h3 id="with-the-library-sdk">With the library / sdk</h3>
+<h3 id="with-the-library-sdk">With the library / SDK</h3>
 
 <p>You can use the <code><a href="colmi_r02_client/client.html">colmi_r02_client.client</a></code> class as a library to do your own stuff in python. I've tried to write a lot of docstrings, which are visible on <a href="https://tahnok.github.io/colmi_r02_client/">the docs site</a></p>
 
@@ -183,14 +190,14 @@ Commands:
 
 <p>At a high level though, you can talk to and read from the ring using BLE. There's no binding or security keys required to get started. (that's kind of bad, but the range on the ring is really tiny and I'm not too worried about someone getting my steps or heart rate information. Up to you).</p>
 
-<p>The ring has a ble GATT service with the UUID <code>6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E</code>. It has two important characteristics:</p>
+<p>The ring has a BLE GATT service with the UUID <code>6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E</code>. It has two important characteristics:</p>
 
 <ol>
 <li>RX: <code>6E400002-B5A3-F393-E0A9-E50E24DCCA9E</code>, which you write to</li>
 <li>TX: <code>6E400003-B5A3-F393-E0A9-E50E24DCCA9E</code>, which you can "subscribe" to and is where the ring responds to packets you have sent.</li>
 </ol>
 
-<p>This closely ressembles the <a href="https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth_services/services/nus.html">Nordic UART Service</a> and UART/Serial communications in general.</p>
+<p>This closely resembles the <a href="https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth_services/services/nus.html">Nordic UART Service</a> and UART/Serial communications in general.</p>
 
 <h3 id="packet-structure">Packet structure</h3>
 
@@ -205,6 +212,13 @@ Commands:
 <p>If you want to know the actual packet structure for a given feature's request or response, take a look at the source code for that feature. I've tried to make it pretty easy to follow even if you don't know python very well. There are also some tests that you can refer to for validated request/response pairs and human readable interpretations of that data.</p>
 
 <p>Got questions or ideas? <a href="mailto:tahnok+colmir02@gmail.com">Send me an email</a> or <a href="https://github.com/tahnok/colmi_r02_client/issues/new">open an issue</a></p>
+
+<h2 id="other-links">Other links</h2>
+
+<ul>
+<li><a href="https://github.com/Puxtril/colmi-docs">https://github.com/Puxtril/colmi-docs</a></li>
+<li>gadgetbridge (open source android client for many smart devices) support <a href="https://codeberg.org/Freeyourgadget/Gadgetbridge/pulls/3896">PR</a></li>
+</ul>
 </div>
 
                         <input id="mod-colmi_r02_client-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
