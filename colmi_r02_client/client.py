@@ -209,3 +209,20 @@ class Client:
             self.queues[hr_settings.CMD_HEART_RATE_LOG_SETTINGS].get(),
             timeout=2,
         )
+
+    async def get_steps(self, target: datetime, today: datetime | None = None) -> list[steps.SportDetail] | steps.NoData:
+        if today is None:
+            today = datetime.now(timezone.utc)
+
+        if target.tzinfo != timezone.utc:
+            logger.info("Converting target time to utc")
+            target = target.astimezone(tz=timezone.utc)
+
+        days = (today.date() - target.date()).days
+        logger.debug(f"Looking back {days} days")
+
+        await self.send_packet(steps.read_steps_packet(days))
+        return await asyncio.wait_for(
+            self.queues[steps.CMD_GET_STEP_SOMEDAY].get(),
+            timeout=2,
+        )

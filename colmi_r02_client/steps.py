@@ -4,10 +4,21 @@ from colmi_r02_client.packet import make_packet
 
 CMD_GET_STEP_SOMEDAY = 67  # 0x43
 
-GET_TODAY_STEPS_PACKET = make_packet(
-    CMD_GET_STEP_SOMEDAY,
-    bytearray(b"\x00\x0f\x00\x5f\x01"),
-)
+
+def read_steps_packet(day_offset: int = 0) -> bytearray:
+    """
+    Read the steps for a given day offset from "today" relative to the ring's internal clock.
+
+    There's also 4 more bytes I don't fully understand but seem constant
+    - 0x0f # constant
+    - 0x00 # idk
+    - 0x5f # less than 95 and greater than byte
+    - 0x01 # constant
+    """
+    sub_data = bytearray(b"\x00\x0f\x00\x5f\x01")
+    sub_data[0] = day_offset
+
+    return make_packet(CMD_GET_STEP_SOMEDAY, sub_data)
 
 
 @dataclass
@@ -16,9 +27,15 @@ class SportDetail:
     month: int
     day: int
     time_index: int
+    """I'm not sure about this one yet"""
     calories: int
     steps: int
     distance: int
+    """Distance in meters"""
+
+
+class NoData:
+    """Returned when there's no heart rate data"""
 
 
 class SportDetailParser:
@@ -42,44 +59,48 @@ class SportDetailParser:
         self.index = 0
         self.details: list[SportDetail] = []
 
-    def parse(self, packet: bytearray) -> None:
+    def parse(self, packet: bytearray) -> list[SportDetail] | None | NoData:
         assert len(packet) == 16
         assert packet[0] == CMD_GET_STEP_SOMEDAY
 
         if self.index == 0 and packet[1] == 255:
             self.reset()
-            return
+            return NoData()
 
         if self.index == 0 and packet[1] == 240:
             if packet[3] == 1:
                 self.new_calorie_protocol = True
             self.index += 1
+            return None
+
+        year = bcd_to_decimal(packet[1]) + 2000
+        month = bcd_to_decimal(packet[2])
+        day = bcd_to_decimal(packet[3])
+        time_index = packet[4]
+        calories = packet[7] | (packet[8] << 8)
+        if self.new_calorie_protocol:
+            calories *= 10
+        steps = packet[9] | (packet[10] << 8)
+        distance = packet[11] | (packet[12] << 8)
+
+        details = SportDetail(
+            year=year,
+            month=month,
+            day=day,
+            time_index=time_index,
+            calories=calories,
+            steps=steps,
+            distance=distance,
+        )
+        self.details.append(details)
+
+        if packet[5] == packet[6] - 1:
+            x = self.details
+            self.reset()
+            return x
         else:
-            year = bcd_to_decimal(packet[1]) + 2000
-            month = bcd_to_decimal(packet[2])
-            day = bcd_to_decimal(packet[3])
-            time_index = packet[4]
-            calories = packet[7] | (packet[8] << 8)
-            if self.new_calorie_protocol:
-                calories *= 10
-            steps = packet[9] | (packet[10] << 8)
-            distance = packet[11] | (packet[12] << 8)
-
-            details = SportDetail(
-                year=year,
-                month=month,
-                day=day,
-                time_index=time_index,
-                calories=calories,
-                steps=steps,
-                distance=distance,
-            )
-            print("Details: ", details)
-            self.details.append(details)
-
             self.index += 1
-            if packet[5] == packet[6] - 1:
-                self.reset()
+            return None
 
 
 def bcd_to_decimal(b: int) -> int:

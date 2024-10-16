@@ -148,6 +148,23 @@ async def get_real_time_heart_rate(client: Client) -> None:
         click.echo("Error, no HR detected. Is the ring being worn?")
 
 
+@cli_client.command()
+@click.pass_obj
+@click.option(
+    "--when",
+    type=click.DateTime(),
+    required=False,
+    help="The date you want steps for",
+)
+async def get_steps(client: Client, when: datetime | None = None) -> None:
+    """Get step data"""
+
+    if when is None:
+        when = datetime.now(tz=timezone.utc)
+    result = await client.get_steps(when)
+    click.echo(result)
+
+
 DEVICE_NAME_PREFIXES = [
     "R01",
     "R02",
