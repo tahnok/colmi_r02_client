@@ -2,7 +2,10 @@
 A python client for connecting to the Colmi R02 Smart ring
 """
 
+import csv
+import dataclasses
 from datetime import datetime, timezone
+from io import StringIO
 from pathlib import Path
 import logging
 import time
@@ -12,6 +15,7 @@ from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
 from colmi_r02_client.hr import HeartRateLog
+from colmi_r02_client import steps, pretty_print
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -156,13 +160,26 @@ async def get_real_time_heart_rate(client: Client) -> None:
     required=False,
     help="The date you want steps for",
 )
-async def get_steps(client: Client, when: datetime | None = None) -> None:
+@click.option("--as-csv", is_flag=True, help="Print as CSV", default=False)
+async def get_steps(client: Client, when: datetime | None = None, as_csv: bool = False) -> None:
     """Get step data"""
 
     if when is None:
         when = datetime.now(tz=timezone.utc)
     result = await client.get_steps(when)
-    click.echo(result)
+    if isinstance(result, steps.NoData):
+        click.echo("No results for day")
+        return
+
+    if not as_csv:
+        click.echo(pretty_print.print_dataclasses(result))
+    else:
+        out = StringIO()
+        writer = csv.DictWriter(out, fieldnames=[f.name for f in dataclasses.fields(steps.SportDetail)])
+        writer.writeheader()
+        for r in result:
+            writer.writerow(dataclasses.asdict(r))
+        click.echo(out.getvalue())
 
 
 DEVICE_NAME_PREFIXES = [
