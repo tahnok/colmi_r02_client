@@ -6,7 +6,7 @@ authors = ["Wesley Ellis <tahnok@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11"
 bleak = "^0.22.2"
 asyncclick = "^8.1.7.2"
 
