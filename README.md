@@ -2,6 +2,8 @@
 
 Open source python client to read your data from the Colmi R02 family of Smart Rings. 100% open source, 100% offline.
 
+[Source code on GitHub](https://github.com/tahnok/colmi_r02_client)
+
 ## What is the Colmi R02?
 
 <img src="https://cdn.tahnok.ca/u/banner_colmi_r02.png" alt="picture of the colmi r02 smart ring in shiny black. The electronics can be seen through the epoxy inside the ring" width="100%"/>
@@ -29,6 +31,8 @@ Are you hiring? [Send me an email](mailto:tahnok+colmir02@gmail.com)
 ## How to buy
 
 You can get it on [here on AliExpress](https://www.aliexpress.com/item/1005006631448993.html). If that link is dead try searching for "COLMI R02", I got mine from "Colmi official store". It cost me $CAD 22 shipped.
+
+The Colmi R06 is also compatible, and the R03 is probably compatible as well. Investigation into the R10 is ongoing, but if you have one please let me know if it works!
 
 ## Reverse engineering status
 
