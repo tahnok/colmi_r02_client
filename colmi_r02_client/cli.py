@@ -190,6 +190,7 @@ DEVICE_NAME_PREFIXES = [
     "R05",
     "R06",
     "R07",
+    "R10", # maybe compatible?
     "VK-5098",
     "MERLIN",
     "Hello Ring",
