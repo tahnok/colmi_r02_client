@@ -16,32 +16,30 @@ class ReadingError:
     kind: RealTimeReading
     code: int
 
-def get_start_packet(reading_type: RealTimeReading):
+def get_start_packet(reading_type: RealTimeReading) -> bytearray:
     return make_packet(
         CMD_START_REAL_TIME,
         bytearray([reading_type, Action.START])
     )
 
-def get_continue_packet(reading_type: RealTimeReading):
+def get_continue_packet(reading_type: RealTimeReading) -> bytearray:
     return make_packet(
         CMD_START_REAL_TIME,
         bytearray([reading_type, Action.CONTINUE])
     )
 
-def get_stop_packet(reading_type: RealTimeReading):
+def get_stop_packet(reading_type: RealTimeReading) -> bytearray:
     return make_packet(
         CMD_STOP_REAL_TIME,
         bytearray([reading_type, 0, 0])
     )
 
 def parse_real_time_reading(packet: bytearray) -> Reading | ReadingError:
-    """Parses the heart rate and spo2 packets"""
-
     assert packet[0] == CMD_START_REAL_TIME
 
-    kind = packet[1]
+    kind = RealTimeReading(packet[1])
     error_code = packet[2]
     if error_code != 0:
         return ReadingError(kind=kind, code=error_code)
 
-    return Reading(kind=packet[1], value=packet[3])
+    return Reading(kind=kind, value=packet[3])
