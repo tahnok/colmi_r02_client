@@ -2,3 +2,4 @@ captures/*.bin
 *.sqlite
 .hypothesis
 dist/
+__pycache__

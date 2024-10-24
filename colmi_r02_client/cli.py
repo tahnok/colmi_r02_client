@@ -14,7 +14,7 @@ import asyncclick as click
 from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
-from colmi_r02_client import steps, pretty_print, db, date_utils, hr
+from colmi_r02_client import steps, pretty_print, db, date_utils, hr, real_time
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -144,19 +144,17 @@ async def set_heart_rate_log_settings(client: Client, enable: bool, interval: in
 
 @cli_client.command()
 @click.pass_obj
-async def get_real_time_heart_rate(client: Client) -> None:
-    """Get real time heart rate.
-
-    TODO: add number of readings
-    """
-
+@click.argument("reading", nargs=1, type=click.Choice(list(real_time.REAL_TIME_MAPPING.keys())))
+async def get_real_time(client: Client, reading: str) -> None:
+    """Get any real time measurement (like heart rate or SPO2)"""
     async with client:
         click.echo("Starting reading, please wait.")
-        result = await client.get_realtime_heart_rate()
+        reading_type = real_time.REAL_TIME_MAPPING[reading]
+        result = await client.get_realtime_reading(reading_type)
         if result:
             click.echo(result)
         else:
-            click.echo("Error, no HR detected. Is the ring being worn?")
+            click.echo(f"Error, no {reading.replace('-', ' ')} detected. Is the ring being worn?")
 
 
 @cli_client.command()

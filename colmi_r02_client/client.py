@@ -10,18 +10,7 @@ from typing import Any
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from colmi_r02_client import (
-    battery,
-    date_utils,
-    real_time_hr,
-    steps,
-    set_time,
-    blink_twice,
-    hr,
-    hr_settings,
-    packet,
-    reboot,
-)
+from colmi_r02_client import battery, date_utils, steps, set_time, blink_twice, hr, hr_settings, packet, reboot, real_time
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -52,8 +41,8 @@ class FullData:
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
-    real_time_hr.CMD_START_HEART_RATE: real_time_hr.parse_heart_rate,
-    real_time_hr.CMD_STOP_HEART_RATE: empty_parse,
+    real_time.CMD_START_REAL_TIME: real_time.parse_real_time_reading,
+    real_time.CMD_STOP_REAL_TIME: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
     hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
@@ -141,10 +130,10 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def get_realtime_heart_rate(self) -> list[int] | None:
-        return await self._poll_real_time_reading(real_time_hr.START_HEART_RATE_PACKET)
+    async def _poll_real_time_reading(self, reading_type: real_time.RealTimeReading) -> list[int] | None:
+        start_packet = real_time.get_start_packet(reading_type)
+        stop_packet = real_time.get_stop_packet(reading_type)
 
-    async def _poll_real_time_reading(self, start_packet: bytearray) -> list[int] | None:
         await self.send_packet(start_packet)
 
         valid_readings: list[int] = []
@@ -152,28 +141,27 @@ class Client:
         tries = 0
         while len(valid_readings) < 6 and tries < 20:
             try:
-                data: real_time_hr.Reading | real_time_hr.ReadingError = await asyncio.wait_for(
-                    self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
+                data: real_time.Reading | real_time.ReadingError = await asyncio.wait_for(
+                    self.queues[real_time.CMD_START_REAL_TIME].get(),
                     timeout=2,
                 )
-                if isinstance(data, real_time_hr.ReadingError):
+                if isinstance(data, real_time.ReadingError):
                     error = True
                     break
                 if data.value != 0:
                     valid_readings.append(data.value)
             except TimeoutError:
                 tries += 1
-                await self.send_packet(real_time_hr.CONTINUE_HEART_RATE_PACKET)
+                # TODO remove this since it breaks Realtec based rings
+                await self.send_packet(real_time.CONTINUE_HEART_RATE_PACKET)
 
-        await self.send_packet(
-            real_time_hr.STOP_HEART_RATE_PACKET,
-        )
+        await self.send_packet(stop_packet)
         if error:
             return None
         return valid_readings
 
-    async def get_realtime_spo2(self) -> list[int] | None:
-        return await self._poll_real_time_reading(real_time_hr.START_SPO2_PACKET)
+    async def get_realtime_reading(self, reading_type: real_time.RealTimeReading) -> list[int] | None:
+        return await self._poll_real_time_reading(reading_type)
 
     async def set_time(self, ts: datetime) -> None:
         await self.send_packet(set_time.set_time_packet(ts))
