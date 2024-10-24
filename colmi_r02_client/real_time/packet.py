@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from colmi_r02_client.real_time.enum import RealTimeReading, Action
 from colmi_r02_client.packet import make_packet
 
-CMD_REAL_TIME_REQUEST = 105
+CMD_START_REAL_TIME = 105
+CMD_STOP_REAL_TIME = 106
 
 @dataclass
 class Reading:
@@ -15,28 +16,28 @@ class ReadingError:
     kind: RealTimeReading
     code: int
 
-def get_start_packet_for_type(measurement_type: RealTimeReading):
+def get_start_packet(reading_type: RealTimeReading):
     return make_packet(
-        CMD_REAL_TIME_REQUEST,
-        bytearray([measurement_type, Action.START])
+        CMD_START_REAL_TIME,
+        bytearray([reading_type, Action.START])
     )
 
-def get_continue_packet_for_type(measurement_type: RealTimeReading):
+def get_continue_packet(reading_type: RealTimeReading):
     return make_packet(
-        CMD_REAL_TIME_REQUEST,
-        bytearray([measurement_type, Action.CONTINUE])
+        CMD_START_REAL_TIME,
+        bytearray([reading_type, Action.CONTINUE])
     )
 
-def get_end_packet_for_type(measurement_type: RealTimeReading):
+def get_stop_packet(reading_type: RealTimeReading):
     return make_packet(
-        CMD_REAL_TIME_REQUEST,
-        bytearray([measurement_type, Action.STOP])
+        CMD_STOP_REAL_TIME,
+        bytearray([reading_type, 0, 0])
     )
 
-def parse_heart_rate(packet: bytearray) -> Reading | ReadingError:
+def parse_real_time_reading(packet: bytearray) -> Reading | ReadingError:
     """Parses the heart rate and spo2 packets"""
 
-    assert packet[0] == CMD_REAL_TIME_REQUEST
+    assert packet[0] == CMD_START_REAL_TIME
 
     kind = packet[1]
     error_code = packet[2]
