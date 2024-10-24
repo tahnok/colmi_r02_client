@@ -21,6 +21,11 @@ from colmi_r02_client import (
     reboot,
 )
 
+from colmi_r02_client.real_time import (
+    enum as rt_enum,
+    packet as rt_packet
+)
+
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -129,10 +134,11 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def get_realtime_heart_rate(self) -> list[int] | None:
-        return await self._poll_real_time_reading(real_time_hr.START_HEART_RATE_PACKET)
+    async def _poll_real_time_reading(
+            self, reading_type: rt_packet.RealTimeReading) -> list[int] | None:
+        start_packet = rt_packet.get_start_packet(reading_type)
+        stop_packet = rt_packet.get_stop_packet(reading_type)
 
-    async def _poll_real_time_reading(self, start_packet: bytearray) -> list[int] | None:
         await self.send_packet(start_packet)
 
         valid_readings: list[int] = []
@@ -140,28 +146,25 @@ class Client:
         tries = 0
         while len(valid_readings) < 6 and tries < 20:
             try:
-                data: real_time_hr.Reading | real_time_hr.ReadingError = await asyncio.wait_for(
-                    self.queues[real_time_hr.CMD_START_HEART_RATE].get(),
+                data: rt_packet.Reading | rt_packet.ReadingError = await asyncio.wait_for(
+                    self.queues[rt_packet.CMD_START_REAL_TIME].get(),
                     timeout=2,
                 )
-                if isinstance(data, real_time_hr.ReadingError):
+                if isinstance(data, rt_packet.ReadingError):
                     error = True
                     break
                 if data.value != 0:
                     valid_readings.append(data.value)
             except TimeoutError:
                 tries += 1
-                await self.send_packet(real_time_hr.CONTINUE_HEART_RATE_PACKET)
 
-        await self.send_packet(
-            real_time_hr.STOP_HEART_RATE_PACKET,
-        )
+        await self.send_packet(stop_packet)
         if error:
             return None
         return valid_readings
 
-    async def get_realtime_spo2(self) -> list[int] | None:
-        return await self._poll_real_time_reading(real_time_hr.START_SPO2_PACKET)
+    async def get_realtime_reading(self, reading_type: rt_enum.RealTimeReading) -> list[int] | None:
+        return await self._poll_real_time_reading(reading_type)
 
     async def set_time(self, ts: datetime) -> None:
         await self.send_packet(set_time.set_time_packet(ts))

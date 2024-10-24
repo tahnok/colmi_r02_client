@@ -15,6 +15,7 @@ from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
 from colmi_r02_client.hr import HeartRateLog
+from colmi_r02_client.real_time.enum import REAL_TIME_MAPPING, RealTimeName
 from colmi_r02_client import steps, pretty_print
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
@@ -142,22 +143,17 @@ async def set_heart_rate_log_settings(client: Client, enable: bool, interval: in
         click.echo(await client.get_heart_rate_log_settings())
         click.echo("Done")
 
-
 @cli_client.command()
 @click.pass_obj
-async def get_real_time_heart_rate(client: Client) -> None:
-    """Get real time heart rate.
-
-    TODO: add number of readings
-    """
-
-    async with client:
-        click.echo("Starting reading, please wait.")
-        result = await client.get_realtime_heart_rate()
-        if result:
-            click.echo(result)
-        else:
-            click.echo("Error, no HR detected. Is the ring being worn?")
+@click.argument("reading", nargs=1, type=click.Choice([m for m in RealTimeName]))
+async def get_real_time(client: Client, reading: RealTimeName) -> None:
+    click.echo("Starting reading, please wait.")
+    reading_type = REAL_TIME_MAPPING[reading]
+    result = await client.get_realtime_reading(reading_type)
+    if result:
+        click.echo(result)
+    else:
+        click.echo("Error, no HR detected. Is the ring being worn?")
 
 
 @cli_client.command()
