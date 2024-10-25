@@ -41,7 +41,7 @@ async def main(address=None, name=None, output_file='hr_spo2_log.csv'):
     output_path = Path(output_file)
     if not output_path.exists():
         with output_path.open('w') as f:
-            f.write("timestamp,heart_rate,spo2\n")
+            f.write("timestamp,heart_rate,spo2,battery_level,is_charging\n")
 
     while True:
         try:
@@ -61,10 +61,16 @@ async def main(address=None, name=None, output_file='hr_spo2_log.csv'):
             spo2_value = sum(spo2_result) / len(spo2_result) if spo2_result else None
             print(f"SPO2: {spo2_value}" if spo2_value else "No SPO2 data")
 
-            with output_path.open('a') as f:
-                f.write(f"{timestamp},{hr_value},{spo2_value}\n")
+            print(f"{timestamp} - Getting Battery Level...")
+            battery_info = await client.get_battery()
+            battery_level = battery_info.battery_level
+            is_charging = battery_info.charging
+            print(f"Battery Level: {battery_level}%, Charging: {is_charging}")
 
-            await asyncio.sleep(10)  # Adjust as needed
+            with output_path.open('a') as f:
+                f.write(f"{timestamp},{hr_value},{spo2_value},{battery_level},{is_charging}\n")
+
+            await asyncio.sleep(10)  # Adjust the interval as needed
 
         except Exception as e:
             print(f"Exception occurred: {e}")
@@ -79,7 +85,7 @@ async def main(address=None, name=None, output_file='hr_spo2_log.csv'):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Poll heart rate and SPO2 from Colmi R02 ring")
+    parser = argparse.ArgumentParser(description="Poll heart rate, SPO2, and battery level from Colmi R02 ring")
     parser.add_argument('--address', help='Bluetooth address of the device')
     parser.add_argument('--name', help='Bluetooth name of the device')
     parser.add_argument('--output', help='Output CSV file', default='hr_spo2_log.csv')
