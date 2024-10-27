@@ -218,19 +218,20 @@ async def util():
 
 
 @util.command()
-async def scan():
+@click.option("--all", is_flag=True, help="Print all devices, no name filtering", default=False)
+async def scan(all: bool) -> None:
     """Scan for possible devices based on known prefixes and print the bluetooth address."""
 
     # TODO maybe bluetooth specific stuff like this should be in another package?
     devices = await BleakScanner.discover()
 
     if len(devices) > 0:
-        print("Found device(s)")
-        print(f"{'Name':>20}  | Address")
-        print("-" * 44)
+        click.echo("Found device(s)")
+        click.echo(f"{'Name':>20}  | Address")
+        click.echo("-" * 44)
         for d in devices:
             name = d.name
-            if name and any(name for p in DEVICE_NAME_PREFIXES if name.startswith(p)):
-                print(f"{name:>20}  |  {d.address}")
+            if name and (all or any(name for p in DEVICE_NAME_PREFIXES if name.startswith(p))):
+                click.echo(f"{name:>20}  |  {d.address}")
     else:
-        print("No devices found. Try moving the ring closer to computer")
+        click.echo("No devices found. Try moving the ring closer to computer")
