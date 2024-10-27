@@ -189,6 +189,16 @@ async def get_steps(client: Client, when: datetime | None = None, as_csv: bool =
             click.echo(out.getvalue())
 
 
+@cli_client.command()
+@click.pass_obj
+async def reboot(client: Client) -> None:
+    """Reboot the ring"""
+
+    async with client:
+        await client.reboot()
+        click.echo("Ring rebooted")
+
+
 DEVICE_NAME_PREFIXES = [
     "R01",
     "R02",
