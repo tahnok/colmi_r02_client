@@ -199,6 +199,29 @@ async def reboot(client: Client) -> None:
         click.echo("Ring rebooted")
 
 
+@cli_client.command()
+@click.pass_obj
+@click.option(
+    "--command",
+    type=click.IntRange(min=0, max=255),
+    help="Raw command",
+)
+@click.option(
+    "--subdata",
+    type=str,
+    help="Hex encoded subdata array, will be parsed into a bytearray",
+)
+@click.option("--replies", type=click.IntRange(min=0), default=0, help="How many reply packets to wait for")
+async def raw(client: Client, command: int, subdata: str | None, replies: int) -> None:
+    """Send the ring a raw command"""
+
+    p_subdata = bytearray.fromhex(subdata) if subdata is not None else bytearray()
+
+    async with client:
+        results = await client.raw(command, p_subdata, replies)
+        click.echo(results)
+
+
 DEVICE_NAME_PREFIXES = [
     "R01",
     "R02",

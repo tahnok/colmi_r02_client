@@ -17,6 +17,7 @@ from colmi_r02_client import (
     blink_twice,
     hr,
     hr_settings,
+    packet,
     reboot,
 )
 
@@ -230,3 +231,18 @@ class Client:
 
     async def reboot(self) -> None:
         await self.send_packet(reboot.REBOOT_PACKET)
+
+    async def raw(self, command: int, subdata: bytearray, replies: int = 0) -> list[bytearray]:
+        p = packet.make_packet(command, subdata)
+        await self.send_packet(p)
+
+        results = []
+        while replies > 0:
+            data: bytearray = await asyncio.wait_for(
+                self.queues[command].get(),
+                timeout=2,
+            )
+            results.append(data)
+            replies -= 1
+
+        return results
