@@ -59,7 +59,7 @@ async def cli_client(context: click.Context, debug: bool, record: bool, address:
 
     client = Client(address, record_to=record_to)
 
-    context.obj = await context.with_async_resource(client)
+    context.obj = client
 
 
 @cli_client.command()
@@ -67,8 +67,9 @@ async def cli_client(context: click.Context, debug: bool, record: bool, address:
 async def info(client: Client) -> None:
     """Get device info and battery level"""
 
-    print("device info", await client.get_device_info())
-    print("battery:", await client.get_battery())
+    async with client:
+        print("device info", await client.get_device_info())
+        print("battery:", await client.get_battery())
 
 
 @cli_client.command()
@@ -82,12 +83,13 @@ async def info(client: Client) -> None:
 async def get_heart_rate_log(client: Client, target: datetime) -> None:
     """Get heart rate for given date"""
 
-    log = await client.get_heart_rate_log(target)
-    print("Data:", log)
-    if isinstance(log, HeartRateLog):
-        for hr, ts in log.heart_rates_with_times():
-            if hr != 0:
-                print(f"{ts.strftime('%H:%M')}, {hr}")
+    async with client:
+        log = await client.get_heart_rate_log(target)
+        print("Data:", log)
+        if isinstance(log, HeartRateLog):
+            for hr, ts in log.heart_rates_with_times():
+                if hr != 0:
+                    print(f"{ts.strftime('%H:%M')}, {hr}")
 
 
 @cli_client.command()
@@ -105,7 +107,8 @@ async def set_time(client: Client, when: datetime | None) -> None:
 
     if when is None:
         when = datetime.now(tz=timezone.utc)
-    await client.set_time(when)
+    async with client:
+        await client.set_time(when)
 
 
 @cli_client.command()
@@ -113,8 +116,9 @@ async def set_time(client: Client, when: datetime | None) -> None:
 async def get_heart_rate_log_settings(client: Client) -> None:
     """Get heart rate log settings"""
 
-    click.echo("heart rate log settings:")
-    click.echo(await client.get_heart_rate_log_settings())
+    async with client:
+        click.echo("heart rate log settings:")
+        click.echo(await client.get_heart_rate_log_settings())
 
 
 @cli_client.command()
@@ -130,10 +134,11 @@ async def get_heart_rate_log_settings(client: Client) -> None:
 async def set_heart_rate_log_settings(client: Client, enable: bool, interval: int) -> None:
     """Get heart rate log settings"""
 
-    click.echo("Changing heart rate log settings")
-    await client.set_heart_rate_log_settings(enable, interval)
-    click.echo(await client.get_heart_rate_log_settings())
-    click.echo("Done")
+    async with client:
+        click.echo("Changing heart rate log settings")
+        await client.set_heart_rate_log_settings(enable, interval)
+        click.echo(await client.get_heart_rate_log_settings())
+        click.echo("Done")
 
 
 @cli_client.command()
@@ -144,12 +149,13 @@ async def get_real_time_heart_rate(client: Client) -> None:
     TODO: add number of readings
     """
 
-    click.echo("Starting reading, please wait.")
-    result = await client.get_realtime_heart_rate()
-    if result:
-        click.echo(result)
-    else:
-        click.echo("Error, no HR detected. Is the ring being worn?")
+    async with client:
+        click.echo("Starting reading, please wait.")
+        result = await client.get_realtime_heart_rate()
+        if result:
+            click.echo(result)
+        else:
+            click.echo("Error, no HR detected. Is the ring being worn?")
 
 
 @cli_client.command()
@@ -166,20 +172,21 @@ async def get_steps(client: Client, when: datetime | None = None, as_csv: bool =
 
     if when is None:
         when = datetime.now(tz=timezone.utc)
-    result = await client.get_steps(when)
-    if isinstance(result, steps.NoData):
-        click.echo("No results for day")
-        return
+    async with client:
+        result = await client.get_steps(when)
+        if isinstance(result, steps.NoData):
+            click.echo("No results for day")
+            return
 
-    if not as_csv:
-        click.echo(pretty_print.print_dataclasses(result))
-    else:
-        out = StringIO()
-        writer = csv.DictWriter(out, fieldnames=[f.name for f in dataclasses.fields(steps.SportDetail)])
-        writer.writeheader()
-        for r in result:
-            writer.writerow(dataclasses.asdict(r))
-        click.echo(out.getvalue())
+        if not as_csv:
+            click.echo(pretty_print.print_dataclasses(result))
+        else:
+            out = StringIO()
+            writer = csv.DictWriter(out, fieldnames=[f.name for f in dataclasses.fields(steps.SportDetail)])
+            writer.writeheader()
+            for r in result:
+                writer.writerow(dataclasses.asdict(r))
+            click.echo(out.getvalue())
 
 
 DEVICE_NAME_PREFIXES = [
@@ -190,7 +197,7 @@ DEVICE_NAME_PREFIXES = [
     "R05",
     "R06",
     "R07",
-    "R10", # maybe compatible?
+    "R10",  # maybe compatible?
     "VK-5098",
     "MERLIN",
     "Hello Ring",
