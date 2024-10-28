@@ -9,3 +9,5 @@ ruff check --fix
 mypy colmi_r02_client
 
 pytest
+
+poetry check --lock
