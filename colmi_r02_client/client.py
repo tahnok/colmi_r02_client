@@ -21,10 +21,7 @@ from colmi_r02_client import (
     reboot,
 )
 
-from colmi_r02_client.real_time import (
-    enum as rt_enum,
-    packet as rt_packet
-)
+from colmi_r02_client import real_time
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -135,9 +132,9 @@ class Client:
         return result
 
     async def _poll_real_time_reading(
-            self, reading_type: rt_packet.RealTimeReading) -> list[int] | None:
-        start_packet = rt_packet.get_start_packet(reading_type)
-        stop_packet = rt_packet.get_stop_packet(reading_type)
+            self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
+        start_packet = real_time.packet.get_start_packet(reading_type)
+        stop_packet = real_time.packet.get_stop_packet(reading_type)
 
         await self.send_packet(start_packet)
 
@@ -146,11 +143,11 @@ class Client:
         tries = 0
         while len(valid_readings) < 6 and tries < 20:
             try:
-                data: rt_packet.Reading | rt_packet.ReadingError = await asyncio.wait_for(
-                    self.queues[rt_packet.CMD_START_REAL_TIME].get(),
+                data: real_time.packet.Reading | real_time.packet.ReadingError = await asyncio.wait_for(
+                    self.queues[real_time.packet.CMD_START_REAL_TIME].get(),
                     timeout=2,
                 )
-                if isinstance(data, rt_packet.ReadingError):
+                if isinstance(data, real_time.packet.ReadingError):
                     error = True
                     break
                 if data.value != 0:
@@ -163,7 +160,7 @@ class Client:
             return None
         return valid_readings
 
-    async def get_realtime_reading(self, reading_type: rt_enum.RealTimeReading) -> list[int] | None:
+    async def get_realtime_reading(self, reading_type: real_time.enum.RealTimeReading) -> list[int] | None:
         return await self._poll_real_time_reading(reading_type)
 
     async def set_time(self, ts: datetime) -> None:

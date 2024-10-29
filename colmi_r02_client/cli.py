@@ -145,15 +145,17 @@ async def set_heart_rate_log_settings(client: Client, enable: bool, interval: in
 
 @cli_client.command()
 @click.pass_obj
-@click.argument("reading", nargs=1, type=click.Choice([m for m in RealTimeName]))
+@click.argument("reading", nargs=1, type=click.Choice(RealTimeName))
 async def get_real_time(client: Client, reading: RealTimeName) -> None:
-    click.echo("Starting reading, please wait.")
-    reading_type = REAL_TIME_MAPPING[reading]
-    result = await client.get_realtime_reading(reading_type)
-    if result:
-        click.echo(result)
-    else:
-        click.echo("Error, no HR detected. Is the ring being worn?")
+    """Get any real time measurement (like heart rate or SPO2)"""
+    async with client:
+        click.echo("Starting reading, please wait.")
+        reading_type = REAL_TIME_MAPPING[reading]
+        result = await client.get_realtime_reading(reading_type)
+        if result:
+            click.echo(result)
+        else:
+            click.echo("Error, no HR detected. Is the ring being worn?")
 
 
 @cli_client.command()
