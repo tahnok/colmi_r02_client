@@ -109,6 +109,8 @@ async def set_time(client: Client, when: datetime | None) -> None:
         when = datetime.now(tz=timezone.utc)
     async with client:
         await client.set_time(when)
+    click.echo("Time set successfully")
+    click.echo("Please ignore the unexpected packet. It's expectedly unexpected")
 
 
 @cli_client.command()
