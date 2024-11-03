@@ -6,6 +6,9 @@ from colmi_r02_client.packet import make_packet
 CMD_START_REAL_TIME = 105
 CMD_STOP_REAL_TIME = 106
 
+CMD_REAL_TIME_HEART_RATE = 30
+CONTINUE_HEART_RATE_PACKET = make_packet(CMD_REAL_TIME_HEART_RATE, bytearray(b"3"))
+
 @dataclass
 class Reading:
     kind: RealTimeReading
