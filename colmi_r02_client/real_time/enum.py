@@ -1,4 +1,4 @@
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 
 class Action(IntEnum):
     START = 1
@@ -22,25 +22,14 @@ class RealTimeReading(IntEnum):
     BLOOD_SUGAR = 9
     HRV = 10
 
-class RealTimeName(StrEnum):
-    HEART_RATE = "heart-rate" # Works for R02
-    SPO2 = "spo2" # Works for R02
-    BLOOD_PRESSURE = "blood-pressure" # Works for R02 (not sure if it's accurate)
-    FATIGUE = "fatigue" # Works for R02 (not sure if it's accurate)
-    HEALTH_CHECK = "health-check" # Works for R02 (not sure if it's accurate)
-    ECG = "ecg" # Works for R02 (not sure if it's accurate)
-    PRESSURE = "pressure" # Works for R02 (not sure if it's accurate)
-    BLOOD_SUGAR = "blood-sugar" # Works for R02 (not sure if it's accurate)
-    HRV = "hrv" # Works for R02 (not sure if it's accurate)
-
 REAL_TIME_MAPPING = {
-    RealTimeName.HEART_RATE: RealTimeReading.HEART_RATE,
-    RealTimeName.BLOOD_PRESSURE: RealTimeReading.BLOOD_PRESSURE,
-    RealTimeName.SPO2: RealTimeReading.SPO2,
-    RealTimeName.FATIGUE: RealTimeReading.FATIGUE,
-    RealTimeName.HEALTH_CHECK: RealTimeReading.HEALTH_CHECK,
-    RealTimeName.ECG: RealTimeReading.ECG,
-    RealTimeName.PRESSURE: RealTimeReading.PRESSURE,
-    RealTimeName.BLOOD_SUGAR: RealTimeReading.BLOOD_SUGAR,
-    RealTimeName.HRV: RealTimeReading.HRV,
+    "heart-rate": RealTimeReading.HEART_RATE,
+    "blood-pressure": RealTimeReading.BLOOD_PRESSURE,
+    "spo2": RealTimeReading.SPO2,
+    "fatigue": RealTimeReading.FATIGUE,
+    "health-check": RealTimeReading.HEALTH_CHECK,
+    "ecg": RealTimeReading.ECG,
+    "pressure": RealTimeReading.PRESSURE,
+    "blood-sugar": RealTimeReading.BLOOD_SUGAR,
+    "hrv": RealTimeReading.HRV,
 }
