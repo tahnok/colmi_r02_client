@@ -25,7 +25,7 @@ def _minutes_so_far(dt: datetime) -> int:
 
     I don't know why it's off by one, it just is.
     """
-    midnight = datetime(dt.year, dt.month, dt.day).timestamp()
+    midnight = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo).timestamp()
     delta = dt.timestamp() - midnight  # seconds since midnight
 
     return round(delta / 60) + 1
@@ -63,9 +63,9 @@ class HeartRateLogParser:
     def __init__(self):
         self.reset()
 
-    def reset(self):
-        self._raw_heart_rates = []
-        self.timestamp = None
+    def reset(self) -> None:
+        self._raw_heart_rates: list[int] = []
+        self.timestamp: datetime | None = None
         self.size = 0
         self.index = 0
         self.end = False
@@ -75,8 +75,7 @@ class HeartRateLogParser:
         d = self.timestamp
         if d is None:
             return False
-        now = datetime.now()  # use local time
-        logger.info(f"Comparing {d} to {now}")
+        now = datetime.now(tz=timezone.utc)  # use utc time
         return bool(d.year == now.year and d.month == now.month and d.day == now.day)
 
     def parse(self, packet: bytearray) -> HeartRateLog | NoData | None:
@@ -87,9 +86,7 @@ class HeartRateLogParser:
         sub_type 0 contains the lengths of things
         byte 2 is the number of expected packets after this.
 
-        example: bytearray(b'\x15\x00\x18\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x002'),
-
-
+        example: bytearray(b'\x15\x00\x18\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x002')
         """
 
         sub_type = packet[1]
@@ -142,7 +139,7 @@ class HeartRateLogParser:
                 return None
 
     @property
-    def heart_rates(self):
+    def heart_rates(self) -> list[int]:
         """
         Normalize and clean heart rate logs
 
@@ -158,6 +155,10 @@ class HeartRateLogParser:
             hr = hr[0:288]
         elif len(self._raw_heart_rates) < 288:
             hr.extend([0] * (288 - len(hr)))
+
+        # TODO see if we can remove this
+        # need a good reason why parsing should depend on the day
+        # index might be good enough to indicate how much "valid" data we've gotten
         if self.is_today():
             m = _minutes_so_far(datetime.now(tz=timezone.utc)) // 5
             hr[m:] = [0] * len(hr[m:])
