@@ -143,6 +143,7 @@ async def set_heart_rate_log_settings(client: Client, enable: bool, interval: in
         click.echo(await client.get_heart_rate_log_settings())
         click.echo("Done")
 
+
 @cli_client.command()
 @click.pass_obj
 @click.argument("reading", nargs=1, type=click.Choice(REAL_TIME_MAPPING.keys()))

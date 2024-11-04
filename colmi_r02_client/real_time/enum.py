@@ -1,15 +1,18 @@
 from enum import IntEnum
 
+
 class Action(IntEnum):
     START = 1
     PAUSE = 2
     CONTINUE = 3
     STOP = 4
 
+
 class RealTimeReading(IntEnum):
     """
     Taken from https://colmi.puxtril.com/commands/#data-request
     """
+
     HEART_RATE = 1
     BLOOD_PRESSURE = 2
     SPO2 = 3
@@ -21,6 +24,7 @@ class RealTimeReading(IntEnum):
     PRESSURE = 8
     BLOOD_SUGAR = 9
     HRV = 10
+
 
 REAL_TIME_MAPPING = {
     "heart-rate": RealTimeReading.HEART_RATE,

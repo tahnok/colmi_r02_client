@@ -131,8 +131,7 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def _poll_real_time_reading(
-            self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
+    async def _poll_real_time_reading(self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
         start_packet = real_time.packet.get_start_packet(reading_type)
         stop_packet = real_time.packet.get_stop_packet(reading_type)
 

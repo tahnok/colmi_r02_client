@@ -9,33 +9,30 @@ CMD_STOP_REAL_TIME = 106
 CMD_REAL_TIME_HEART_RATE = 30
 CONTINUE_HEART_RATE_PACKET = make_packet(CMD_REAL_TIME_HEART_RATE, bytearray(b"3"))
 
+
 @dataclass
 class Reading:
     kind: RealTimeReading
     value: int
+
 
 @dataclass
 class ReadingError:
     kind: RealTimeReading
     code: int
 
+
 def get_start_packet(reading_type: RealTimeReading) -> bytearray:
-    return make_packet(
-        CMD_START_REAL_TIME,
-        bytearray([reading_type, Action.START])
-    )
+    return make_packet(CMD_START_REAL_TIME, bytearray([reading_type, Action.START]))
+
 
 def get_continue_packet(reading_type: RealTimeReading) -> bytearray:
-    return make_packet(
-        CMD_START_REAL_TIME,
-        bytearray([reading_type, Action.CONTINUE])
-    )
+    return make_packet(CMD_START_REAL_TIME, bytearray([reading_type, Action.CONTINUE]))
+
 
 def get_stop_packet(reading_type: RealTimeReading) -> bytearray:
-    return make_packet(
-        CMD_STOP_REAL_TIME,
-        bytearray([reading_type, 0, 0])
-    )
+    return make_packet(CMD_STOP_REAL_TIME, bytearray([reading_type, 0, 0]))
+
 
 def parse_real_time_reading(packet: bytearray) -> Reading | ReadingError:
     assert packet[0] == CMD_START_REAL_TIME
