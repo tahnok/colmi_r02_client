@@ -11,7 +11,6 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from colmi_r02_client import (
     battery,
-    real_time_hr,
     steps,
     set_time,
     blink_twice,
@@ -45,8 +44,8 @@ def log_packet(packet: bytearray) -> None:
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
-    real_time_hr.CMD_START_HEART_RATE: real_time_hr.parse_heart_rate,
-    real_time_hr.CMD_STOP_HEART_RATE: empty_parse,
+    real_time.packet.CMD_START_REAL_TIME: real_time.packet.parse_real_time_reading,
+    real_time.packet.CMD_STOP_REAL_TIME: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
     hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
@@ -131,7 +130,8 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def _poll_real_time_reading(self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
+    async def _poll_real_time_reading(
+            self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
         start_packet = real_time.packet.get_start_packet(reading_type)
         stop_packet = real_time.packet.get_stop_packet(reading_type)
 
