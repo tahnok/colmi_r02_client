@@ -28,11 +28,15 @@ Got questions or ideas?
 
 Are you hiring? [Send me an email](mailto:tahnok+colmir02@gmail.com)
 
+## Compatibility
+
+The COLMI R02 and R06 are both fully compatible. The R10 is mostly compatible but there is a bug with getting real time heart rate. Steps and heart rate logging do work.
+
+The rule of thumb is that if the listing suggests you use the QRing app, the ring is compatible with this client.
+
 ## How to buy
 
 You can get it on [here on AliExpress](https://www.aliexpress.com/item/1005006631448993.html). If that link is dead try searching for "COLMI R02", I got mine from "Colmi official store". It cost me $CAD 22 shipped.
-
-The Colmi R06 is also compatible, and the R03 is probably compatible as well. Investigation into the R10 is ongoing, but if you have one please let me know if it works!
 
 ## Reverse engineering status
 
