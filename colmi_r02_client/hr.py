@@ -6,6 +6,7 @@ import logging
 import struct
 
 from colmi_r02_client.packet import make_packet
+from colmi_r02_client import date_utils
 
 CMD_READ_HEART_RATE = 21  # 0x15
 
@@ -19,22 +20,10 @@ def read_heart_rate_packet(target: datetime) -> bytearray:
     return make_packet(CMD_READ_HEART_RATE, data)
 
 
-def _minutes_so_far(dt: datetime) -> int:
-    """
-    Return the number of minutes elapsed in the day so far plus 1.
-
-    I don't know why it's off by one, it just is.
-    """
-    midnight = datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo).timestamp()
-    delta = dt.timestamp() - midnight  # seconds since midnight
-
-    return round(delta / 60) + 1
-
-
 def _add_times(heart_rates: list[int], ts: datetime) -> list[tuple[int, datetime]]:
     assert len(heart_rates) == 288, "Need exactly 288 points at 5 minute intervals"
     result = []
-    m = datetime(ts.year, ts.month, ts.day)
+    m = datetime(ts.year, ts.month, ts.day, tzinfo=ts.tzinfo)
     five_min = timedelta(minutes=5)
     for hr in heart_rates:
         result.append((hr, m))
@@ -75,8 +64,7 @@ class HeartRateLogParser:
         d = self.timestamp
         if d is None:
             return False
-        now = datetime.now(tz=timezone.utc)  # use utc time
-        return bool(d.year == now.year and d.month == now.month and d.day == now.day)
+        return date_utils.is_today(d)
 
     def parse(self, packet: bytearray) -> HeartRateLog | NoData | None:
         r"""
@@ -160,7 +148,7 @@ class HeartRateLogParser:
         # need a good reason why parsing should depend on the day
         # index might be good enough to indicate how much "valid" data we've gotten
         if self.is_today():
-            m = _minutes_so_far(datetime.now(tz=timezone.utc)) // 5
+            m = date_utils.minutes_so_far(datetime.now(tz=timezone.utc)) // 5
             hr[m:] = [0] * len(hr[m:])
 
         return hr

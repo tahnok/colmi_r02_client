@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Callable
 from datetime import datetime, timezone
+from dataclasses import dataclass
 import logging
 from pathlib import Path
 from types import TracebackType
@@ -11,6 +12,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from colmi_r02_client import (
     battery,
+    date_utils,
     real_time_hr,
     steps,
     set_time,
@@ -39,6 +41,13 @@ def empty_parse(_packet: bytearray) -> None:
 
 def log_packet(packet: bytearray) -> None:
     print("received: ", packet)
+
+
+# TODO move this maybe?
+@dataclass
+class FullData:
+    address: str
+    heart_rates: list[hr.HeartRateLog | hr.NoData]
 
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
@@ -80,6 +89,9 @@ class Client:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        logger.info("Disconnecting")
+        if exc_val is not None:
+            logger.error("had an error")
         await self.disconnect()
 
     async def connect(self):
@@ -189,7 +201,7 @@ class Client:
 
     async def get_heart_rate_log(self, target: datetime | None = None) -> hr.HeartRateLog | hr.NoData:
         if target is None:
-            target = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
+            target = date_utils.start_of_day(date_utils.now())
         await self.send_packet(hr.read_heart_rate_packet(target))
         return await asyncio.wait_for(
             self.queues[hr.CMD_READ_HEART_RATE].get(),
@@ -246,3 +258,14 @@ class Client:
             replies -= 1
 
         return results
+
+    async def get_full_data(self, start: datetime, end: datetime) -> FullData:
+        """
+        Fetches all data from the ring between start and end. Useful for syncing.
+        """
+
+        logs = []
+        for d in date_utils.dates_between(start, end):
+            logs.append(await self.get_heart_rate_log(d))
+
+        return FullData(self.address, logs)

@@ -4,7 +4,7 @@ A python client for connecting to the Colmi R02 Smart ring
 
 import csv
 import dataclasses
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from io import StringIO
 from pathlib import Path
 import logging
@@ -14,8 +14,7 @@ import asyncclick as click
 from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
-from colmi_r02_client.hr import HeartRateLog
-from colmi_r02_client import steps, pretty_print
+from colmi_r02_client import steps, pretty_print, db, date_utils, hr
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -86,10 +85,10 @@ async def get_heart_rate_log(client: Client, target: datetime) -> None:
     async with client:
         log = await client.get_heart_rate_log(target)
         print("Data:", log)
-        if isinstance(log, HeartRateLog):
-            for hr, ts in log.heart_rates_with_times():
-                if hr != 0:
-                    print(f"{ts.strftime('%H:%M')}, {hr}")
+        if isinstance(log, hr.HeartRateLog):
+            for reading, ts in log.heart_rates_with_times():
+                if reading != 0:
+                    print(f"{ts.strftime('%H:%M')}, {reading}")
 
 
 @cli_client.command()
@@ -222,6 +221,57 @@ async def raw(client: Client, command: int, subdata: str | None, replies: int) -
     async with client:
         results = await client.raw(command, p_subdata, replies)
         click.echo(results)
+
+
+@cli_client.command()
+@click.pass_obj
+@click.option(
+    "--db",
+    "db_path",
+    type=click.Path(writable=True, path_type=Path),
+    help="Path to a directory or file to use as the database. If dir, then filename will be ring_data.sqlite",
+)
+@click.option(
+    "--start",
+    type=click.DateTime(),
+    required=False,
+    help="The date you want to start grabbing data from",
+)
+@click.option(
+    "--end",
+    type=click.DateTime(),
+    required=False,
+    help="The date you want to start grabbing data to",
+)
+async def sync(client: Client, db_path: Path | None, start: datetime | None, end: datetime | None) -> None:
+    """
+    Sync all data from the ring to a sqlite database
+
+    Currently grabs:
+        - heart rates
+    """
+
+    if db_path is None:
+        db_path = Path.cwd()
+    if db_path.is_dir():
+        db_path /= Path("ring_data.sqlite")
+
+    click.echo(f"Writing to {db_path}")
+    with db.get_db_session(db_path) as session:
+        if start is None:
+            start = db.get_last_sync(session)
+        if start is None:
+            start = date_utils.now() - timedelta(days=7)
+        if end is None:
+            end = date_utils.now()
+
+        click.echo(f"Syncing from {start} to {end}")
+
+        async with client:
+            fd = await client.get_full_data(start, end)
+        db.sync(session, fd)
+
+    click.echo("Done")
 
 
 DEVICE_NAME_PREFIXES = [

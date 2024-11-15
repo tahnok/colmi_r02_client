@@ -1,15 +1,11 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from freezegun import freeze_time
-
-from hypothesis import given
-import hypothesis.strategies as st
 
 from colmi_r02_client.hr import (
     HeartRateLogParser,
     HeartRateLog,
     NoData,
-    _minutes_so_far,
 )
 
 HEART_RATE_PACKETS = [
@@ -66,6 +62,9 @@ def test_parse_until_end():
         tzinfo=timezone.utc,
     )
     assert result.timestamp == expected_timestamp
+    assert result.size == 24
+    assert result.index == 295
+    assert result.range == 5
 
 
 def test_parse_no_data():
@@ -137,27 +136,6 @@ def test_get_heart_rate_288_today():
 
     assert len(hr) == 288
     assert hr == ([1] * 12) + ([0] * 276)
-
-
-@given(hour=st.integers(min_value=-23, max_value=23))
-def test_minutes_so_far_midnight(hour):
-    tz = timezone(timedelta(hours=hour))
-    x = datetime(2024, 1, 1, tzinfo=tz)
-    assert _minutes_so_far(x) == 1
-
-
-@given(hour=st.integers(min_value=-23, max_value=23))
-def test_minutes_so_far_minutes(hour):
-    tz = timezone(timedelta(hours=hour))
-    x = datetime(2024, 1, 1, 0, 15, tzinfo=tz)
-    assert _minutes_so_far(x) == 16
-
-
-@given(hour=st.integers(min_value=-23, max_value=23))
-def test_minutes_so_far_day(hour):
-    tz = timezone(timedelta(hours=hour))
-    x = datetime(2024, 1, 1, 23, 59, tzinfo=tz)
-    assert _minutes_so_far(x) == 1440
 
 
 def test_with_times():
