@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.11,<3.14"
 bleak = "^0.22.2"
 asyncclick = "^8.1.7.2"
+sqlalchemy = "^2.0.36"
 
 [tool.poetry.scripts]
 colmi_r02_client = "colmi_r02_client.cli:cli_client"
