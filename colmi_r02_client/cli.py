@@ -15,8 +15,7 @@ from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
 from colmi_r02_client.hr import HeartRateLog
-from colmi_r02_client.real_time.enum import REAL_TIME_MAPPING
-from colmi_r02_client import steps, pretty_print
+from colmi_r02_client import steps, pretty_print, real_time
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -146,12 +145,12 @@ async def set_heart_rate_log_settings(client: Client, enable: bool, interval: in
 
 @cli_client.command()
 @click.pass_obj
-@click.argument("reading", nargs=1, type=click.Choice(REAL_TIME_MAPPING.keys()))
+@click.argument("reading", nargs=1, type=click.Choice(list(real_time.REAL_TIME_MAPPING.keys())))
 async def get_real_time(client: Client, reading: str) -> None:
     """Get any real time measurement (like heart rate or SPO2)"""
     async with client:
         click.echo("Starting reading, please wait.")
-        reading_type = REAL_TIME_MAPPING[reading]
+        reading_type = real_time.REAL_TIME_MAPPING[reading]
         result = await client.get_realtime_reading(reading_type)
         if result:
             click.echo(result)

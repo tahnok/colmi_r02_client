@@ -1,7 +1,54 @@
-from dataclasses import dataclass
+"""
+Stream real time data from the ring.
 
-from colmi_r02_client.real_time.enum import RealTimeReading, Action
+Currently heart rate and SPO2 seem reasonable.
+
+HRV, ECG, blood pressure and blood sugar seem unlikely to be something you
+can correct
+"""
+
+from dataclasses import dataclass
+from enum import IntEnum
+
 from colmi_r02_client.packet import make_packet
+
+
+class Action(IntEnum):
+    START = 1
+    PAUSE = 2
+    CONTINUE = 3
+    STOP = 4
+
+
+class RealTimeReading(IntEnum):
+    """
+    Taken from https://colmi.puxtril.com/commands/#data-request
+    """
+
+    HEART_RATE = 1
+    BLOOD_PRESSURE = 2
+    SPO2 = 3
+    FATIGUE = 4
+    HEALTH_CHECK = 5
+    # leaving this out as it's redundant
+    # REAL_TIME_HEART_RATE = 6
+    ECG = 7
+    PRESSURE = 8
+    BLOOD_SUGAR = 9
+    HRV = 10
+
+
+REAL_TIME_MAPPING: dict[str, RealTimeReading] = {
+    "heart-rate": RealTimeReading.HEART_RATE,
+    "blood-pressure": RealTimeReading.BLOOD_PRESSURE,
+    "spo2": RealTimeReading.SPO2,
+    "fatigue": RealTimeReading.FATIGUE,
+    "health-check": RealTimeReading.HEALTH_CHECK,
+    "ecg": RealTimeReading.ECG,
+    "pressure": RealTimeReading.PRESSURE,
+    "blood-sugar": RealTimeReading.BLOOD_SUGAR,
+    "hrv": RealTimeReading.HRV,
+}
 
 CMD_START_REAL_TIME = 105
 CMD_STOP_REAL_TIME = 106

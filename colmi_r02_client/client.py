@@ -44,8 +44,8 @@ def log_packet(packet: bytearray) -> None:
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     battery.CMD_BATTERY: battery.parse_battery,
-    real_time.packet.CMD_START_REAL_TIME: real_time.packet.parse_real_time_reading,
-    real_time.packet.CMD_STOP_REAL_TIME: empty_parse,
+    real_time.CMD_START_REAL_TIME: real_time.parse_real_time_reading,
+    real_time.CMD_STOP_REAL_TIME: empty_parse,
     steps.CMD_GET_STEP_SOMEDAY: steps.SportDetailParser().parse,
     hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
@@ -130,10 +130,9 @@ class Client:
         assert isinstance(result, battery.BatteryInfo)
         return result
 
-    async def _poll_real_time_reading(
-            self, reading_type: real_time.packet.RealTimeReading) -> list[int] | None:
-        start_packet = real_time.packet.get_start_packet(reading_type)
-        stop_packet = real_time.packet.get_stop_packet(reading_type)
+    async def _poll_real_time_reading(self, reading_type: real_time.RealTimeReading) -> list[int] | None:
+        start_packet = real_time.get_start_packet(reading_type)
+        stop_packet = real_time.get_stop_packet(reading_type)
 
         await self.send_packet(start_packet)
 
@@ -142,25 +141,26 @@ class Client:
         tries = 0
         while len(valid_readings) < 6 and tries < 20:
             try:
-                data: real_time.packet.Reading | real_time.packet.ReadingError = await asyncio.wait_for(
-                    self.queues[real_time.packet.CMD_START_REAL_TIME].get(),
+                data: real_time.Reading | real_time.ReadingError = await asyncio.wait_for(
+                    self.queues[real_time.CMD_START_REAL_TIME].get(),
                     timeout=2,
                 )
-                if isinstance(data, real_time.packet.ReadingError):
+                if isinstance(data, real_time.ReadingError):
                     error = True
                     break
                 if data.value != 0:
                     valid_readings.append(data.value)
             except TimeoutError:
                 tries += 1
-                await self.send_packet(real_time.packet.CONTINUE_HEART_RATE_PACKET)
+                # TODO remove this since it breaks Realtec based rings
+                await self.send_packet(real_time.CONTINUE_HEART_RATE_PACKET)
 
         await self.send_packet(stop_packet)
         if error:
             return None
         return valid_readings
 
-    async def get_realtime_reading(self, reading_type: real_time.enum.RealTimeReading) -> list[int] | None:
+    async def get_realtime_reading(self, reading_type: real_time.RealTimeReading) -> list[int] | None:
         return await self._poll_real_time_reading(reading_type)
 
     async def set_time(self, ts: datetime) -> None:

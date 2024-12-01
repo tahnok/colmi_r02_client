@@ -78,7 +78,7 @@ Found device(s)
 Once you have your address you can use it to do things like get real time heart rate
 
 ```sh
-colmi_r02_client --address=70:CB:0D:D0:34:1C get-real-time-heart-rate
+colmi_r02_client --address=70:CB:0D:D0:34:1C get-real-time heart-rate
 ```
 
 ```
