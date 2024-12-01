@@ -90,6 +90,20 @@ Starting reading, please wait.
 [81, 81, 79, 79, 79, 79]
 ```
 
+You can also sync the data from your ring to sqlite
+
+```sh
+colmi_r02_client --address=3A:08:6A:6F:EB:EC sync
+```
+
+```
+Writing to /home/wes/src/colmi_r02_client/ring_data.sqlite
+Syncing from 2024-12-01 01:43:04.723232+00:00 to 2024-12-01 02:03:20.150315+00:00
+Done
+```
+
+The database schema is available [here](https://github.com/tahnok/colmi_r02_client/blob/main/tests/database_schema.sql)
+
 The most up to date and comprehensive help for the command line can be found running
 
 ```sh
@@ -111,9 +125,13 @@ Commands:
   get-heart-rate-log           Get heart rate for given date
   get-heart-rate-log-settings  Get heart rate log settings
   get-real-time-heart-rate     Get real time heart rate.
+  get-steps                    Get step data
   info                         Get device info and battery level
+  raw                          Send the ring a raw command
+  reboot                       Reboot the ring
   set-heart-rate-log-settings  Get heart rate log settings
   set-time                     Set the time on the ring, required if you...
+  sync                         Sync all data from the ring to a sqlite...
 ```
 
 ### With the library / SDK

@@ -40,6 +40,8 @@
                     <li><a href="colmi_r02_client/blink_twice.html">blink_twice</a></li>
                     <li><a href="colmi_r02_client/cli.html">cli</a></li>
                     <li><a href="colmi_r02_client/client.html">client</a></li>
+                    <li><a href="colmi_r02_client/date_utils.html">date_utils</a></li>
+                    <li><a href="colmi_r02_client/db.html">db</a></li>
                     <li><a href="colmi_r02_client/hr.html">hr</a></li>
                     <li><a href="colmi_r02_client/hr_settings.html">hr_settings</a></li>
                     <li><a href="colmi_r02_client/packet.html">packet</a></li>
@@ -165,6 +167,20 @@ colmi_r02_client    </h1>
 [81, 81, 79, 79, 79, 79]
 </code></pre>
 
+<p>You can also sync the data from your ring to sqlite</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code>colmi_r02_client<span class="w"> </span>--address<span class="o">=</span>3A:08:6A:6F:EB:EC<span class="w"> </span>sync
+</code></pre>
+</div>
+
+<pre><code>Writing to /home/wes/src/colmi_r02_client/ring_data.sqlite
+Syncing from 2024-12-01 01:43:04.723232+00:00 to 2024-12-01 02:03:20.150315+00:00
+Done
+</code></pre>
+
+<p>The database schema is available <a href="https://github.com/tahnok/colmi_r02_client/blob/main/tests/database_schema.sql">here</a></p>
+
 <p>The most up to date and comprehensive help for the command line can be found running</p>
 
 <div class="pdoc-code codehilite">
@@ -186,9 +202,13 @@ Commands:
   get-heart-rate-log           Get heart rate for given date
   get-heart-rate-log-settings  Get heart rate log settings
   get-real-time-heart-rate     Get real time heart rate.
+  get-steps                    Get step data
   info                         Get device info and battery level
+  raw                          Send the ring a raw command
+  reboot                       Reboot the ring
   set-heart-rate-log-settings  Get heart rate log settings
   set-time                     Set the time on the ring, required if you...
+  sync                         Sync all data from the ring to a sqlite...
 </code></pre>
 
 <h3 id="with-the-library-sdk">With the library / SDK</h3>
