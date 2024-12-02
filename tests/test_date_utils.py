@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, timezone
 
 from freezegun import freeze_time
 from hypothesis import given, strategies as st
+import pytest
 
-from colmi_r02_client.date_utils import start_of_day, end_of_day, minutes_so_far, is_today
+from colmi_r02_client.date_utils import start_of_day, end_of_day, minutes_so_far, is_today, dates_between
 
 
 @given(st.datetimes(timezones=st.timezones()))
@@ -57,3 +58,27 @@ def test_minutes_so_far_day(hour):
     tz = timezone(timedelta(hours=hour))
     x = datetime(2024, 1, 1, 23, 59, tzinfo=tz)
     assert minutes_so_far(x) == 1440
+
+
+def test_dates_between_one():
+    dt = datetime(2024, 11, 11)
+    assert [dt] == list(dates_between(dt, dt))
+
+
+def test_dates_between_two():
+    start = datetime(2024, 11, 11)
+    end = datetime(2024, 11, 12)
+    assert [start, end] == list(dates_between(start, end))
+
+
+def test_dates_between_many():
+    start = datetime(2024, 10, 11)
+    end = datetime(2024, 10, 14)
+    assert [start, datetime(2024, 10, 12), datetime(2024, 10, 13), end] == list(dates_between(start, end))
+
+
+def test_dates_between_end_before_start():
+    start = datetime(2024, 11, 12)
+    end = datetime(2024, 11, 11)
+    with pytest.raises(ValueError):
+        list(dates_between(start, end))
