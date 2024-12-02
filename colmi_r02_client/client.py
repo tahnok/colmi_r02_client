@@ -152,8 +152,6 @@ class Client:
                     valid_readings.append(data.value)
             except TimeoutError:
                 tries += 1
-                # TODO remove this since it breaks Realtec based rings
-                await self.send_packet(real_time.CONTINUE_HEART_RATE_PACKET)
 
         await self.send_packet(stop_packet)
         if error:
