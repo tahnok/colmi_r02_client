@@ -30,7 +30,11 @@ Are you hiring? [Send me an email](mailto:tahnok+colmir02@gmail.com)
 
 ## Compatibility
 
-The COLMI R02 and R06 are both fully compatible. The R10 is mostly compatible but there is a bug with getting real time heart rate. Steps and heart rate logging do work.
+The following rings are fully compatible:
+
+ - Colmi R02
+ - Colmi R06
+ - Colmi R10
 
 The rule of thumb is that if the listing suggests you use the QRing app, the ring is compatible with this client.
 
