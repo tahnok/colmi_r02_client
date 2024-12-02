@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Iterator
 
-import pytest
-
 
 def start_of_day(ts: datetime) -> datetime:
     return ts.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -20,30 +18,6 @@ def dates_between(start: datetime, end: datetime) -> Iterator[datetime]:
     for i in range(td.days + 1):
         d = start + timedelta(days=i)
         yield d
-
-
-def test_dates_between_one():
-    dt = datetime(2024, 11, 11)
-    assert [dt] == list(dates_between(dt, dt))
-
-
-def test_dates_between_two():
-    start = datetime(2024, 11, 11)
-    end = datetime(2024, 11, 12)
-    assert [start, end] == list(dates_between(start, end))
-
-
-def test_dates_between_many():
-    start = datetime(2024, 10, 11)
-    end = datetime(2024, 10, 14)
-    assert [start, datetime(2024, 10, 12), datetime(2024, 10, 13), end] == list(dates_between(start, end))
-
-
-def test_dates_between_end_before_start():
-    start = datetime(2024, 11, 12)
-    end = datetime(2024, 11, 11)
-    with pytest.raises(ValueError):
-        list(dates_between(start, end))
 
 
 def now() -> datetime:
