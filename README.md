@@ -57,7 +57,6 @@ You can get it on [here on AliExpress](https://www.aliexpress.com/item/100500663
 
  - add more CLI functionality
  - pretty print HR and steps
- - sync all data to a file or SQLite db
  - simple web interface
 
 ## Getting started
