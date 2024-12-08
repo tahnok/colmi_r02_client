@@ -162,5 +162,5 @@ def sync(session: Session, data: FullData) -> None:
     session.commit()
 
 
-def get_last_sync(session: Session) -> datetime | None:
-    return session.scalars(func.max(Sync.timestamp)).one_or_none()
+def get_last_sync(session: Session, ring_address: str) -> datetime | None:
+    return session.scalars(select(func.max(Sync.timestamp)).join(Ring).where(Ring.address == ring_address)).one_or_none()

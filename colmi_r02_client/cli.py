@@ -257,7 +257,7 @@ async def sync(client: Client, db_path: Path | None, start: datetime | None, end
     click.echo(f"Writing to {db_path}")
     with db.get_db_session(db_path) as session:
         if start is None:
-            start = db.get_last_sync(session)
+            start = db.get_last_sync(session, client.address)
         if start is None:
             start = date_utils.now() - timedelta(days=7)
         if end is None:

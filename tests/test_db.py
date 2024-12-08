@@ -221,7 +221,9 @@ def test_sync_handles_inconsistent_data(caplog):
 
 def test_get_last_sync_never():
     with get_db_session() as session:
-        assert get_last_sync(session) is None
+        ring = Ring(address="foo")
+        session.add(ring)
+        assert get_last_sync(session, ring.address) is None
 
 
 def test_get_sync_once():
@@ -230,7 +232,7 @@ def test_get_sync_once():
         timestamp = datetime(2024, 11, 11, 11, tzinfo=timezone.utc)
         session.add(Sync(ring=ring, timestamp=timestamp))
         session.commit()
-        assert get_last_sync(session) == timestamp
+        assert get_last_sync(session, ring.address) == timestamp
 
 
 def test_get_sync_many():
@@ -241,7 +243,20 @@ def test_get_sync_many():
         session.add(Sync(ring=ring, timestamp=first))
         session.add(Sync(ring=ring, timestamp=second))
         session.commit()
-        assert get_last_sync(session) == second
+        assert get_last_sync(session, ring.address) == second
+
+
+def test_get_last_sync_two_rings():
+    with get_db_session() as session:
+        ring_1 = Ring(address="foo")
+        ring_2 = Ring(address="bar")
+        first = datetime(2024, 11, 11, 11, tzinfo=timezone.utc)
+        second = datetime(2024, 12, 12, 12, tzinfo=timezone.utc)
+        session.add(Sync(ring=ring_1, timestamp=first))
+        session.add(Sync(ring=ring_2, timestamp=second))
+        session.commit()
+        assert get_last_sync(session, ring_1.address) == first
+        assert get_last_sync(session, ring_2.address) == second
 
 
 def test_datetimes_have_timezones():
@@ -250,7 +265,7 @@ def test_datetimes_have_timezones():
         timestamp = datetime(2024, 11, 11, 11, tzinfo=timezone.utc)
         session.add(Sync(ring=ring, timestamp=timestamp))
         session.commit()
-        assert get_last_sync(session) == timestamp
+        assert get_last_sync(session, ring.address) == timestamp
         assert timestamp.tzinfo is not None
 
 
