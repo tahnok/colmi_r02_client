@@ -133,7 +133,7 @@ async def get_heart_rate_log_settings(client: Client) -> None:
 )
 @click.pass_obj
 async def set_heart_rate_log_settings(client: Client, enable: bool, interval: int) -> None:
-    """Get heart rate log settings"""
+    """Set heart rate log settings"""
 
     async with client:
         click.echo("Changing heart rate log settings")
