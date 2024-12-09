@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, rela
 from sqlalchemy import select, UniqueConstraint, ForeignKey, create_engine, event, func, types
 from sqlalchemy.engine import Engine, Dialect
 
-from colmi_r02_client import hr
+from colmi_r02_client import hr, steps
 from colmi_r02_client.client import FullData
 from colmi_r02_client.date_utils import start_of_day, end_of_day
 
@@ -61,6 +61,7 @@ class Ring(Base):
     ring_id: Mapped[int] = mapped_column(primary_key=True)
     address: Mapped[str]
     heart_rates: Mapped[list["HeartRate"]] = relationship(back_populates="ring")
+    sport_details: Mapped[list["SportDetail"]] = relationship(back_populates="ring")
     syncs: Mapped[list["Sync"]] = relationship(back_populates="ring")
 
 
@@ -72,6 +73,7 @@ class Sync(Base):
     comment: Mapped[str | None]
     ring: Mapped["Ring"] = relationship(back_populates="syncs")
     heart_rates: Mapped[list["HeartRate"]] = relationship(back_populates="sync")
+    sport_details: Mapped[list["SportDetail"]] = relationship(back_populates="sync")
 
 
 class HeartRate(Base):
@@ -84,6 +86,20 @@ class HeartRate(Base):
     ring: Mapped["Ring"] = relationship(back_populates="heart_rates")
     sync_id = mapped_column(ForeignKey("syncs.sync_id"), nullable=False)
     sync: Mapped["Sync"] = relationship(back_populates="heart_rates")
+
+
+class SportDetail(Base):
+    __tablename__ = "sport_details"
+    __table_args__ = (UniqueConstraint("ring_id", "timestamp"),)
+    sport_detail_id: Mapped[int] = mapped_column(primary_key=True)
+    calories: Mapped[int]
+    steps: Mapped[int]
+    distance: Mapped[int]
+    timestamp = mapped_column(DateTimeInUTC(timezone=True), nullable=False)
+    ring_id = mapped_column(ForeignKey("rings.ring_id"), nullable=False)
+    ring: Mapped["Ring"] = relationship(back_populates="sport_details")
+    sync_id = mapped_column(ForeignKey("syncs.sync_id"), nullable=False)
+    sync: Mapped["Sync"] = relationship(back_populates="sport_details")
 
 
 @event.listens_for(Engine, "connect")
@@ -158,6 +174,28 @@ def sync(session: Session, data: FullData) -> None:
             else:
                 h = HeartRate(reading=reading, timestamp=timestamp, ring=ring, sync=sync)
                 session.add(h)
+
+    sport_detail_logs = [x for x in data.sport_details if isinstance(x, steps.SportDetail)]
+    start = min([sport_detail.timestamp for sport_detail in sport_detail_logs])
+    end = max([sport_detail.timestamp for sport_detail in sport_detail_logs])
+
+    existing = {}
+    for sport_detail in session.scalars(
+        select(SportDetail)
+        .where(SportDetail.timestamp >= start_of_day(start))
+        .where(SportDetail.timestamp <= end_of_day(end))
+    ):
+        existing[sport_detail.timestamp] = sport_detail
+
+    for sport_detail in sport_detail_logs:
+        if x := existing.get(sport_detail.timestamp):
+            x.calories = sport_detail.calories
+            x.steps = sport_detail.steps
+            x.distance = sport_detail.distance
+            session.add(x)
+        else:
+            s = SportDetail(calories=sport_detail.calories, steps=sport_detail.steps, distance=sport_detail.distance, timestamp=sport_detail.timestamp, ring=ring, sync=sync)
+            session.add(s)
 
     session.commit()
 
