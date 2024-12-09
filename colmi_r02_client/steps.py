@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 import zoneinfo
 
-from asyncclick import DateTime
-
 from colmi_r02_client.packet import make_packet
 
 CMD_GET_STEP_SOMEDAY = 67  # 0x43
@@ -39,8 +37,16 @@ class SportDetail:
 
     @property
     def timestamp(self) -> datetime:
-        # time_index * 15
-        return datetime(year=self.year, month=self.month, day=self.day, hour=self.time_index // 4, minute=self.time_index % 4 * 15, tzinfo=zoneinfo.ZoneInfo("UTC"))
+        # Move this to date_utils?
+        # convert time_index into a timedelta to add to base year, month, day.
+        return datetime(
+            year=self.year,
+            month=self.month,
+            day=self.day,
+            hour=self.time_index // 4,
+            minute=self.time_index % 4 * 15,
+            tzinfo=zoneinfo.ZoneInfo("UTC"),
+        )
 
 
 class NoData:
