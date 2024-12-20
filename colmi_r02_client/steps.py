@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+import zoneinfo
 
 from colmi_r02_client.packet import make_packet
 
@@ -27,11 +29,24 @@ class SportDetail:
     month: int
     day: int
     time_index: int
-    """I'm not sure about this one yet"""
+    """time_index represents 15 minutes intevals within a day"""
     calories: int
     steps: int
     distance: int
     """Distance in meters"""
+
+    @property
+    def timestamp(self) -> datetime:
+        # Move this to date_utils?
+        # convert time_index into a timedelta to add to base year, month, day.
+        return datetime(
+            year=self.year,
+            month=self.month,
+            day=self.day,
+            hour=self.time_index // 4,
+            minute=self.time_index % 4 * 15,
+            tzinfo=zoneinfo.ZoneInfo("UTC"),
+        )
 
 
 class NoData:
