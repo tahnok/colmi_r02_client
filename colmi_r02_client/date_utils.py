@@ -39,3 +39,10 @@ def minutes_so_far(dt: datetime) -> int:
 def is_today(ts: datetime) -> bool:
     n = now()
     return bool(ts.year == n.year and ts.month == n.month and ts.day == n.day)
+
+
+def naive_to_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is not None:
+        raise ValueError("already tz aware datetime")
+
+    return dt.replace(tzinfo=timezone.utc)
