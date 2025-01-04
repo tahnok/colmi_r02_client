@@ -273,7 +273,7 @@ async def sync(client: Client, db_path: Path | None, start: datetime | None, end
 
         async with client:
             fd = await client.get_full_data(start, end)
-            db.sync(session, fd)
+            db.full_sync(session, fd)
             when = datetime.now(tz=timezone.utc)
             click.echo("Ignore unexpect packet")
             await client.set_time(when)

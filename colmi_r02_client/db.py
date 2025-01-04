@@ -140,17 +140,23 @@ def create_or_find_ring(session: Session, address: str) -> Ring:
     return ring
 
 
-def sync(session: Session, data: FullData) -> None:
+def full_sync(session: Session, data: FullData) -> None:
     """
     TODO:
         - grab battery
-        - grab steps
     """
 
     ring = create_or_find_ring(session, data.address)
     sync = Sync(ring=ring, timestamp=datetime.now(tz=timezone.utc))
     session.add(sync)
 
+    _add_heart_rate(sync, ring, data, session)
+    _add_sport_details(sync, ring, data, session)
+    session.commit()
+
+
+def _add_heart_rate(sync: Sync, ring: Ring, data: FullData, session: Session) -> None:
+    logger.info(f"Adding {len(data.heart_rates)} days of heart rates")
     for log in data.heart_rates:
         if isinstance(log, hr.NoData):
             logger.info("No heart rate data for date")
@@ -175,29 +181,44 @@ def sync(session: Session, data: FullData) -> None:
                 h = HeartRate(reading=reading, timestamp=timestamp, ring=ring, sync=sync)
                 session.add(h)
 
-    sport_detail_logs = [x for x in data.sport_details if isinstance(x, steps.SportDetail)]
+
+def _add_sport_details(sync: Sync, ring: Ring, data: FullData, session: Session) -> None:
+    logger.info(f"Adding {len(data.sport_details)} days of sport details")
+    sport_detail_logs: list[steps.SportDetail] = []
+    for slog in data.sport_details:
+        if isinstance(slog, steps.NoData):
+            logger.info("No step data for date")
+        else:
+            sport_detail_logs.extend(slog)
+    if len(sport_detail_logs) == 0:
+        return
     start = min([sport_detail.timestamp for sport_detail in sport_detail_logs])
     end = max([sport_detail.timestamp for sport_detail in sport_detail_logs])
 
-    existing = {}
-    for sport_detail in session.scalars(
+    existing_sport_logs = {}
+    for sport_detail_record in session.scalars(
         select(SportDetail)
         .where(SportDetail.timestamp >= start_of_day(start))
         .where(SportDetail.timestamp <= end_of_day(end))
     ):
-        existing[sport_detail.timestamp] = sport_detail
+        existing_sport_logs[sport_detail_record.timestamp] = sport_detail_record
 
     for sport_detail in sport_detail_logs:
-        if x := existing.get(sport_detail.timestamp):
+        if x := existing_sport_logs.get(sport_detail.timestamp):
             x.calories = sport_detail.calories
             x.steps = sport_detail.steps
             x.distance = sport_detail.distance
             session.add(x)
         else:
-            s = SportDetail(calories=sport_detail.calories, steps=sport_detail.steps, distance=sport_detail.distance, timestamp=sport_detail.timestamp, ring=ring, sync=sync)
+            s = SportDetail(
+                calories=sport_detail.calories,
+                steps=sport_detail.steps,
+                distance=sport_detail.distance,
+                timestamp=sport_detail.timestamp,
+                ring=ring,
+                sync=sync,
+            )
             session.add(s)
-
-    session.commit()
 
 
 def get_last_sync(session: Session) -> datetime | None:

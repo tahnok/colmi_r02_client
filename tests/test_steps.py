@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from colmi_r02_client.steps import SportDetailParser, SportDetail, NoData
 
 
@@ -86,3 +88,31 @@ def test_no_data_parse():
     actual = sdp.parse(resp)
 
     assert isinstance(actual, NoData)
+
+
+def test_timestamp_midnight():
+    sd = SportDetail(
+        year=2025,
+        month=1,
+        day=1,
+        time_index=0,
+        calories=0,
+        distance=0,
+        steps=0,
+    )
+    ts = datetime(2025, 1, 1, 0, 0, tzinfo=timezone.utc)
+    assert sd.timestamp == ts
+
+
+def test_timestamp_one_more():
+    sd = SportDetail(
+        year=2025,
+        month=1,
+        day=1,
+        time_index=95,
+        calories=0,
+        distance=0,
+        steps=0,
+    )
+    ts = datetime(2025, 1, 1, 23, 45, tzinfo=timezone.utc)
+    assert sd.timestamp == ts
