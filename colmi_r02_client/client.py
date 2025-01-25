@@ -37,6 +37,7 @@ def log_packet(packet: bytearray) -> None:
 class FullData:
     address: str
     heart_rates: list[hr.HeartRateLog | hr.NoData]
+    sport_details: list[list[steps.SportDetail] | steps.NoData]
 
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
@@ -249,9 +250,10 @@ class Client:
         """
         Fetches all data from the ring between start and end. Useful for syncing.
         """
-
-        logs = []
+        heart_rate_logs = []
+        sport_detail_logs = []
         for d in date_utils.dates_between(start, end):
-            logs.append(await self.get_heart_rate_log(d))
+            heart_rate_logs.append(await self.get_heart_rate_log(d))
+            sport_detail_logs.append(await self.get_steps(d))
 
-        return FullData(self.address, logs)
+        return FullData(self.address, heart_rates=heart_rate_logs, sport_details=sport_detail_logs)

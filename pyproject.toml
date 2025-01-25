@@ -76,3 +76,6 @@ select = [
   "YTT",    # flake8-2020
   "RUF",    # Ruff-specific rules
 ]
+ignore = [
+  "SIM108",
+]
