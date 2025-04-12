@@ -19,9 +19,7 @@ check: install
 	poetry run pytest
 	poetry check --lock
 
-# example: make run RING_NAME=R09_XXXXX
 run: install
-	@test -n "$(RING_NAME)" || (echo "RING_NAME is not set"; exit 1)
-	poetry run colmi_r02_client --name $(RING_NAME) info 
+	poetry run colmi_r02_util scan
 
 .PHONY: serve_docs test check run update install

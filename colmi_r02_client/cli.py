@@ -289,6 +289,7 @@ DEVICE_NAME_PREFIXES = [
     "R05",
     "R06",
     "R07",
+    "R09",
     "R10",
     "COLMI",
     "VK-5098",
