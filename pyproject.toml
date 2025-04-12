@@ -1,8 +1,8 @@
-[tool.poetry]
+[project]
 name = "colmi-r02-client"
 version = "0.1.0"
 description = "Connect to Colmi R02 smart ring over BLE"
-authors = ["Wesley Ellis <tahnok@gmail.com>"]
+authors = [{ "name" = "Wesley Ellis", "email" = "tahnok@gmail.com" }]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -11,7 +11,7 @@ bleak = "^0.22.2"
 asyncclick = "^8.1.7.2"
 sqlalchemy = "^2.0.36"
 
-[tool.poetry.scripts]
+[project.scripts]
 colmi_r02_client = "colmi_r02_client.cli:cli_client"
 colmi_r02_util = "colmi_r02_client.cli:util"
 
