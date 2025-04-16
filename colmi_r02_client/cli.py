@@ -15,6 +15,7 @@ from bleak import BleakScanner
 
 from colmi_r02_client.client import Client
 from colmi_r02_client import steps, pretty_print, db, date_utils, hr, real_time
+from colmi_r02_client.instrumentation import instrument_cli
 
 logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 
@@ -30,14 +31,26 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--address", required=False, help="Bluetooth address")
 @click.option("--name", required=False, help="Bluetooth name of the device, slower but will work on macOS")
+@click.option(
+    "--otel",
+    is_flag=True,
+    help="""
+    Enable OpenTelemetry tracing, the endpoint traces get routed to can be configured using OTEL_EXPORTER_OTLP_ENDPOINT.
+    The default value is: http://localhost:4318
+    """,
+)
 @click.pass_context
-async def cli_client(context: click.Context, debug: bool, record: bool, address: str | None, name: str | None) -> None:
+async def cli_client(
+    context: click.Context, debug: bool, record: bool, address: str | None, name: str | None, otel: bool
+) -> None:
     if (address is None and name is None) or (address is not None and name is not None):
         context.fail("You must pass either the address option(preferred) or the name option, but not both")
 
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("bleak").setLevel(logging.INFO)
+    if otel:
+        instrument_cli()
 
     record_to = None
     if record:

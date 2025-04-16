@@ -10,6 +10,9 @@ python = ">=3.11,<3.14"
 bleak = "^0.22.2"
 asyncclick = "^8.1.7.2"
 sqlalchemy = "^2.0.36"
+opentelemetry-instrumentation-asyncclick = ">=0.53b0"
+opentelemetry-exporter-otlp-proto-http = ">=1.32.0"
+opentelemetry-instrumentation = ">=0.53b0" # This is missing upstream, can be removed once resolved in the contrib repo
 
 [tool.poetry.scripts]
 colmi_r02_client = "colmi_r02_client.cli:cli_client"
@@ -23,6 +26,7 @@ mypy = "^1.11.1"
 freezegun = "^1.5.1"
 hypothesis = "^6.112.0"
 pytest-asyncio = "^0.24.0"
+opentelemetry-sdk = ">=0.53b0"
 
 
 [tool.poetry.group.doc.dependencies]

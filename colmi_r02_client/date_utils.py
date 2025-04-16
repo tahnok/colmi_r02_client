@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def start_of_day(ts: datetime) -> datetime:
