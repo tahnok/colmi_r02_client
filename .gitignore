@@ -3,3 +3,9 @@ captures/*.bin
 .hypothesis
 dist/
 __pycache__
+.pytest_cache
+*.egg-info
+*.egg
+*.whl
+.ruff_cache
+.mypy_cache
