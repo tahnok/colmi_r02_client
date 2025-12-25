@@ -10,11 +10,15 @@ from typing import Any
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from colmi_r02_client import battery, date_utils, steps, set_time, blink_twice, hr, hr_settings, packet, reboot, real_time
+from colmi_r02_client import battery, date_utils, steps, set_time, blink_twice, hr, hr_settings, packet, reboot, real_time, big_data
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+
+UART_SERVICE_V2_UUID = "DE5BF728-D711-4E47-AF26-65E3012A5DC7"
+UART_RX_CHAR_V2_UUID = "DE5BF72A-D711-4E47-AF26-65E3012A5DC7"
+UART_TX_CHAR_V2_UUID = "DE5BF729-D711-4E47-AF26-65E3012A5DC7"
 
 DEVICE_INFO_UUID = "0000180A-0000-1000-8000-00805F9B34FB"
 DEVICE_HW_UUID = "00002A27-0000-1000-8000-00805F9B34FB"
@@ -38,6 +42,7 @@ class FullData:
     address: str
     heart_rates: list[hr.HeartRateLog | hr.NoData]
     sport_details: list[list[steps.SportDetail] | steps.NoData]
+    sleep_logs: list[big_data.SleepDay | None]
 
 
 COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
@@ -48,6 +53,7 @@ COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
     hr_settings.CMD_HEART_RATE_LOG_SETTINGS: hr_settings.parse_heart_rate_log_settings,
+    big_data.CMD_BIG_DATA: big_data.parse_bigdata_response,
 }
 """
 TODO put these somewhere nice
@@ -92,8 +98,61 @@ class Client:
         rx_char = nrf_uart_service.get_characteristic(UART_RX_CHAR_UUID)
         assert rx_char
         self.rx_char = rx_char
-
         await self.bleak_client.start_notify(UART_TX_CHAR_UUID, self._handle_tx)
+
+        nrf_uart_service_v2 = self.bleak_client.services.get_service(UART_SERVICE_V2_UUID)
+        assert nrf_uart_service_v2
+        rx_char_v2 = nrf_uart_service_v2.get_characteristic(UART_RX_CHAR_V2_UUID)
+        assert rx_char_v2
+        self.rx_char_v2 = rx_char_v2
+
+        # Buffer for big data packets
+        self._bigdata_buffer = None
+        self._bigdata_expected_size = None
+        await self.bleak_client.start_notify(UART_TX_CHAR_V2_UUID, self._handle_tx_v2)
+
+    def _handle_tx_v2(self, _: BleakGATTCharacteristic, packet: bytearray) -> None:
+        logger.info(f"Received V2 packet {packet}")
+        if packet[0] == big_data.CMD_BIG_DATA:
+            # If already buffering, append
+            if self._bigdata_buffer is not None:
+                self._bigdata_buffer += packet
+                if len(self._bigdata_buffer) < self._bigdata_expected_size + 6:
+                    # Not enough data yet
+                    return
+                packet = self._bigdata_buffer
+                self._bigdata_buffer = None
+                self._bigdata_expected_size = None
+
+            # If this is a new packet, check if it's complete
+            else:
+                if len(packet) < 6:
+                    logger.warning("BigData packet too short for header")
+                    return
+                data_len = int.from_bytes(packet[2:4], 'little')
+                expected_total = data_len + 6
+                if len(packet) < expected_total:
+                    # Start buffering
+                    self._bigdata_buffer = bytearray(packet)
+                    self._bigdata_expected_size = data_len
+                    return
+
+            # Now we have a complete packet
+            if big_data.CMD_BIG_DATA in COMMAND_HANDLERS:
+                result = COMMAND_HANDLERS[big_data.CMD_BIG_DATA](packet)
+                if result is not None:
+                    self.queues[big_data.CMD_BIG_DATA].put_nowait(result)
+                else:
+                    logger.debug("No result returned from parser for big data")
+            else:
+                logger.warning("No handler for big data packet")
+        else:
+            logger.warning(f"Received V2 packet with unknown type: {packet.hex()}")
+
+        if self.record_to is not None:
+            with self.record_to.open("ab") as f:
+                f.write(packet)
+                f.write(b"\n")
 
     async def disconnect(self):
         await self.bleak_client.disconnect()
@@ -121,9 +180,12 @@ class Client:
                 f.write(packet)
                 f.write(b"\n")
 
-    async def send_packet(self, packet: bytearray) -> None:
+    async def send_packet(self, packet: bytearray, is_v2: bool = False) -> None:
         logger.debug(f"Sending packet: {packet}")
-        await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
+        if is_v2:
+            await self.bleak_client.write_gatt_char(self.rx_char_v2, packet, response=False)
+        else:
+            await self.bleak_client.write_gatt_char(self.rx_char, packet, response=False)
 
     async def get_battery(self) -> battery.BatteryInfo:
         await self.send_packet(battery.BATTERY_PACKET)
@@ -228,6 +290,16 @@ class Client:
             timeout=2,
         )
 
+    async def get_sleep(self):
+        # big data does not let us specify a date from what I can tell, so we just get the sleep data which
+        # has "daysAgo" in it based on the current date
+        await self.send_packet(big_data.read_sleep_bigdata_packet(), is_v2=True)
+        res = await asyncio.wait_for(
+            self.queues[big_data.CMD_BIG_DATA].get(),
+            timeout=2,
+        )
+        return res
+
     async def reboot(self) -> None:
         await self.send_packet(reboot.REBOOT_PACKET)
 
@@ -252,8 +324,12 @@ class Client:
         """
         heart_rate_logs = []
         sport_detail_logs = []
+        sleep_logs = []
         for d in date_utils.dates_between(start, end):
             heart_rate_logs.append(await self.get_heart_rate_log(d))
             sport_detail_logs.append(await self.get_steps(d))
+        
+        if sleep_data := await self.get_sleep():
+            sleep_logs.extend(sleep_data)
 
-        return FullData(self.address, heart_rates=heart_rate_logs, sport_details=sport_detail_logs)
+        return FullData(self.address, heart_rates=heart_rate_logs, sport_details=sport_detail_logs, sleep_logs=sleep_logs)

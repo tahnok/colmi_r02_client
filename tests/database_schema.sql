@@ -14,6 +14,20 @@ CREATE TABLE syncs (
 	FOREIGN KEY(ring_id) REFERENCES rings (ring_id)
 )
 
+CREATE TABLE sleep_logs (
+	sleep_log_id INTEGER NOT NULL, 
+	date DATETIME NOT NULL, 
+	ring_id INTEGER NOT NULL, 
+	sync_id INTEGER NOT NULL, 
+	sleep_start INTEGER NOT NULL, 
+	sleep_end INTEGER NOT NULL, 
+	periods VARCHAR NOT NULL, 
+	PRIMARY KEY (sleep_log_id), 
+	UNIQUE (ring_id, date), 
+	FOREIGN KEY(ring_id) REFERENCES rings (ring_id), 
+	FOREIGN KEY(sync_id) REFERENCES syncs (sync_id)
+)
+
 CREATE TABLE heart_rates (
 	heart_rate_id INTEGER NOT NULL, 
 	reading INTEGER NOT NULL, 
