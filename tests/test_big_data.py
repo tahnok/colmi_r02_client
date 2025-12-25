@@ -1,5 +1,5 @@
 import pytest
-from colmi_r02_client.big_data import parse_bigdata_sleep_response, SleepDay, SleepPeriod
+from colmi_r02_client.big_data import parse_bigdata_sleep_response, SleepDay, SleepPeriod, SleepType
 
 def test_parse_bigdata_sleep_response_simple():
     # Example packet for 1 day, 2 periods
@@ -17,8 +17,8 @@ def test_parse_bigdata_sleep_response_simple():
     assert day.sleepStart == 60
     assert day.sleepEnd == 420
     assert len(day.periods) == 2
-    assert day.periods[0] == SleepPeriod(type=2, minutes=30)
-    assert day.periods[1] == SleepPeriod(type=3, minutes=60)
+    assert day.periods[0] == SleepPeriod(type=SleepType.LIGHT, minutes=30)
+    assert day.periods[1] == SleepPeriod(type=SleepType.DEEP, minutes=60)
 
 
 def test_parse_bigdata_sleep_response():
@@ -31,28 +31,28 @@ def test_parse_bigdata_sleep_response():
         sleepStart=1343,
         sleepEnd=542,
         periods=[
-            SleepPeriod(type=2, minutes=54),
-            SleepPeriod(type=3, minutes=17),
-            SleepPeriod(type=5, minutes=17),
-            SleepPeriod(type=2, minutes=48),
-            SleepPeriod(type=3, minutes=16),
-            SleepPeriod(type=2, minutes=32),
-            SleepPeriod(type=4, minutes=32),
-            SleepPeriod(type=3, minutes=32),
-            SleepPeriod(type=2, minutes=32),
-            SleepPeriod(type=4, minutes=16),
-            SleepPeriod(type=3, minutes=32),
-            SleepPeriod(type=2, minutes=32),
-            SleepPeriod(type=4, minutes=16),
-            SleepPeriod(type=2, minutes=32),
-            SleepPeriod(type=3, minutes=32),
-            SleepPeriod(type=2, minutes=64),
-            SleepPeriod(type=3, minutes=32),
-            SleepPeriod(type=2, minutes=48),
-            SleepPeriod(type=3, minutes=16),
-            SleepPeriod(type=2, minutes=2),
-            SleepPeriod(type=5, minutes=12),
-            SleepPeriod(type=2, minutes=25),
+            SleepPeriod(type=SleepType.LIGHT, minutes=54),
+            SleepPeriod(type=SleepType.DEEP, minutes=17),
+            SleepPeriod(type=SleepType.AWAKE, minutes=17),
+            SleepPeriod(type=SleepType.LIGHT, minutes=48),
+            SleepPeriod(type=SleepType.DEEP, minutes=16),
+            SleepPeriod(type=SleepType.LIGHT, minutes=32),
+            SleepPeriod(type=SleepType.REM, minutes=32),
+            SleepPeriod(type=SleepType.DEEP, minutes=32),
+            SleepPeriod(type=SleepType.LIGHT, minutes=32),
+            SleepPeriod(type=SleepType.REM, minutes=16),
+            SleepPeriod(type=SleepType.DEEP, minutes=32),
+            SleepPeriod(type=SleepType.LIGHT, minutes=32),
+            SleepPeriod(type=SleepType.REM, minutes=16),
+            SleepPeriod(type=SleepType.LIGHT, minutes=32),
+            SleepPeriod(type=SleepType.DEEP, minutes=32),
+            SleepPeriod(type=SleepType.LIGHT, minutes=64),
+            SleepPeriod(type=SleepType.DEEP, minutes=32),
+            SleepPeriod(type=SleepType.LIGHT, minutes=48),
+            SleepPeriod(type=SleepType.DEEP, minutes=16),
+            SleepPeriod(type=SleepType.LIGHT, minutes=2),
+            SleepPeriod(type=SleepType.AWAKE, minutes=12),
+            SleepPeriod(type=SleepType.LIGHT, minutes=25),
         ]
     )
     assert days[0] == expected

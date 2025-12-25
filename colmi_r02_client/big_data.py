@@ -1,6 +1,7 @@
 
 import logging
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import List
 from colmi_r02_client.packet import make_packet
 
@@ -8,6 +9,16 @@ CMD_BIG_DATA = 188
 BIG_DATA_SLEEP = 39
 
 logger = logging.getLogger(__name__)
+
+
+class SleepType(IntEnum):
+    """Sleep type enum matching the device's sleep classification."""
+    NODATA = 0
+    ERROR = 1
+    LIGHT = 2
+    DEEP = 3
+    REM = 4
+    AWAKE = 5
 
 
 def read_sleep_bigdata_packet() -> bytearray:
@@ -51,7 +62,7 @@ def parse_bigdata_response(packet: bytearray):
 # Dataclasses for sleep data
 @dataclass
 class SleepPeriod:
-    type: int
+    type: SleepType
     minutes: int
 
 @dataclass
@@ -82,14 +93,7 @@ def parse_bigdata_sleep_response(packet: bytearray) -> List[SleepDay] | None:
         SleepType type;
         uint8_t minutes;
     }
-    enum SleepType : uint8_t {
-        NODATA = 0,
-        ERROR = 1,
-        LIGHT = 2,
-        DEEP = 3,
-        REM = 4,
-        AWAKE = 5,
-    }
+    See SleepType enum for possible values.
     """
     if len(packet) < 7 or packet[0] != CMD_BIG_DATA or packet[1] != BIG_DATA_SLEEP:
         logger.warning("Invalid BigData sleep packet")
@@ -112,7 +116,7 @@ def parse_bigdata_sleep_response(packet: bytearray) -> List[SleepDay] | None:
         while period_idx < idx+1+curDayBytes:
             if period_idx+2 > len(packet):
                 break
-            sleep_type = packet[period_idx]
+            sleep_type = SleepType(packet[period_idx])
             minutes = packet[period_idx+1]
             periods.append(SleepPeriod(type=sleep_type, minutes=minutes))
             period_idx += 2

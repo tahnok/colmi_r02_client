@@ -263,14 +263,14 @@ def test_full_sync_no_sport_details():
 
 
 def test_full_sync_writes_sleep_logs():
-    from colmi_r02_client.big_data import SleepDay, SleepPeriod
+    from colmi_r02_client.big_data import SleepDay, SleepPeriod, SleepType
     address = "fake"
     # Simulate 1 day of sleep data
     sleep_day = SleepDay(
         daysAgo=0,
         sleepStart=60,
         sleepEnd=420,
-        periods=[SleepPeriod(type=2, minutes=30), SleepPeriod(type=3, minutes=60)]
+        periods=[SleepPeriod(type=SleepType.LIGHT, minutes=30), SleepPeriod(type=SleepType.DEEP, minutes=60)]
     )
     fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day])
     with get_db_session() as session:
@@ -299,13 +299,13 @@ def test_full_sync_no_sleep_logs():
 
 
 def test_full_sync_updates_sleep_logs():
-    from colmi_r02_client.big_data import SleepDay, SleepPeriod
+    from colmi_r02_client.big_data import SleepDay, SleepPeriod, SleepType
     address = "fake"
     sleep_day = SleepDay(
         daysAgo=0,
         sleepStart=60,
         sleepEnd=420,
-        periods=[SleepPeriod(type=2, minutes=30)]
+        periods=[SleepPeriod(type=SleepType.LIGHT, minutes=30)]
     )
     fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day])
     with get_db_session() as session:
@@ -315,7 +315,7 @@ def test_full_sync_updates_sleep_logs():
             daysAgo=0,
             sleepStart=120,
             sleepEnd=480,
-            periods=[SleepPeriod(type=3, minutes=60)]
+            periods=[SleepPeriod(type=SleepType.DEEP, minutes=60)]
         )
         fd2 = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day2])
         full_sync(session, fd2)
