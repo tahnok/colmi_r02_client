@@ -1,15 +1,16 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import logging
+import json
 from typing import Any
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, relationship
 from sqlalchemy import select, UniqueConstraint, ForeignKey, create_engine, event, func, types
 from sqlalchemy.engine import Engine, Dialect
 
-from colmi_r02_client import hr, steps
+from colmi_r02_client import hr, steps, big_data
 from colmi_r02_client.client import FullData
-from colmi_r02_client.date_utils import start_of_day, end_of_day
+from colmi_r02_client.date_utils import start_of_day, end_of_day, now
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class Ring(Base):
     heart_rates: Mapped[list["HeartRate"]] = relationship(back_populates="ring")
     sport_details: Mapped[list["SportDetail"]] = relationship(back_populates="ring")
     syncs: Mapped[list["Sync"]] = relationship(back_populates="ring")
+    sleep_logs: Mapped[list["SleepLog"]] = relationship(back_populates="ring")
 
 
 class Sync(Base):
@@ -74,6 +76,20 @@ class Sync(Base):
     ring: Mapped["Ring"] = relationship(back_populates="syncs")
     heart_rates: Mapped[list["HeartRate"]] = relationship(back_populates="sync")
     sport_details: Mapped[list["SportDetail"]] = relationship(back_populates="sync")
+    sleep_logs: Mapped[list["SleepLog"]] = relationship(back_populates="sync")
+
+class SleepLog(Base):
+    __tablename__ = "sleep_logs"
+    __table_args__ = (UniqueConstraint("ring_id", "date"),)
+    sleep_log_id: Mapped[int] = mapped_column(primary_key=True)
+    date = mapped_column(DateTimeInUTC(timezone=True), nullable=False)
+    ring_id = mapped_column(ForeignKey("rings.ring_id"), nullable=False)
+    ring: Mapped["Ring"] = relationship(back_populates="sleep_logs")
+    sync_id = mapped_column(ForeignKey("syncs.sync_id"), nullable=False)
+    sync: Mapped["Sync"] = relationship(back_populates="sleep_logs")
+    sleep_start: Mapped[int]
+    sleep_end: Mapped[int]
+    periods: Mapped[str]  # JSON string of sleep periods
 
 
 class HeartRate(Base):
@@ -152,6 +168,7 @@ def full_sync(session: Session, data: FullData) -> None:
 
     _add_heart_rate(sync, ring, data, session)
     _add_sport_details(sync, ring, data, session)
+    _add_sleep_logs(sync, ring, data, session)
     session.commit()
 
 
@@ -217,6 +234,38 @@ def _add_sport_details(sync: Sync, ring: Ring, data: FullData, session: Session)
                 timestamp=sport_detail.timestamp,
                 ring=ring,
                 sync=sync,
+            )
+            session.add(s)
+
+
+def _add_sleep_logs(sync: Sync, ring: Ring, data: FullData, session: Session) -> None:
+    if not hasattr(data, "sleep_logs") or not data.sleep_logs:
+        return
+    logger.info(f"Adding {len(data.sleep_logs)} days of sleep logs")
+    for log in data.sleep_logs:
+        if not log or not isinstance(log, big_data.SleepDay):
+            continue
+        # Calculate the date from daysAgo
+        date = (now() - timedelta(days=log.daysAgo)).replace(hour=0, minute=0, second=0, microsecond=0)
+        # Check for existing log
+        existing = session.scalars(
+            select(SleepLog).where(SleepLog.ring_id == ring.ring_id, SleepLog.date == date)
+        ).one_or_none()
+        # Convert periods to list of dicts for JSON
+        periods_json = json.dumps([{'type': p.type, 'minutes': p.minutes} for p in log.periods])
+        if existing:
+            existing.sleep_start = log.sleepStart
+            existing.sleep_end = log.sleepEnd
+            existing.periods = periods_json
+            session.add(existing)
+        else:
+            s = SleepLog(
+                date=date,
+                ring=ring,
+                sync=sync,
+                sleep_start=log.sleepStart,
+                sleep_end=log.sleepEnd,
+                periods=periods_json,
             )
             session.add(s)
 
