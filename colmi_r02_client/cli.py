@@ -200,6 +200,16 @@ async def reboot(client: Client) -> None:
 
 @cli_client.command()
 @click.pass_obj
+async def firehose(client: Client) -> None:
+    """Start firehose data dump for 5 seconds"""
+
+    async with client:
+        await client.get_firehose()
+        click.echo("Firehose completed")
+
+
+@cli_client.command()
+@click.pass_obj
 @click.option(
     "--command",
     type=click.IntRange(min=0, max=255),

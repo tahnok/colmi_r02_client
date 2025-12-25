@@ -10,7 +10,19 @@ from typing import Any
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from colmi_r02_client import battery, date_utils, steps, set_time, blink_twice, hr, hr_settings, packet, reboot, real_time
+from colmi_r02_client import (
+    battery,
+    date_utils,
+    steps,
+    set_time,
+    blink_twice,
+    hr,
+    hr_settings,
+    packet,
+    reboot,
+    real_time,
+    firehose,
+)
 
 UART_SERVICE_UUID = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -48,6 +60,7 @@ COMMAND_HANDLERS: dict[int, Callable[[bytearray], Any]] = {
     hr.CMD_READ_HEART_RATE: hr.HeartRateLogParser().parse,
     set_time.CMD_SET_TIME: empty_parse,
     hr_settings.CMD_HEART_RATE_LOG_SETTINGS: hr_settings.parse_heart_rate_log_settings,
+    firehose.CMD_FIREHOSE: firehose.parse_firehose,
 }
 """
 TODO put these somewhere nice
@@ -105,7 +118,7 @@ class Client:
 
         assert len(packet) == 16, f"Packet is the wrong length {packet}"
         packet_type = packet[0]
-        assert packet_type < 127, f"Packet has error bit set {packet}"
+        # assert packet_type < 127, f"Packet has error bit set {packet}"
 
         if packet_type in COMMAND_HANDLERS:
             result = COMMAND_HANDLERS[packet_type](packet)
@@ -154,6 +167,7 @@ class Client:
             except TimeoutError:
                 tries += 1
 
+        # TODO, probably make this a try / finally so we do our best to stop
         await self.send_packet(stop_packet)
         if error:
             return None
@@ -257,3 +271,20 @@ class Client:
             sport_detail_logs.append(await self.get_steps(d))
 
         return FullData(self.address, heart_rates=heart_rate_logs, sport_details=sport_detail_logs)
+
+    async def get_firehose(self):
+        try:
+            await self.send_packet(firehose.START_FIREHOSE_PACKET)
+            tries = 0
+            while tries < 20:
+                tries += 1
+                try:
+                    data = await asyncio.wait_for(
+                        self.queues[firehose.CMD_FIREHOSE].get(),
+                        timeout=2,
+                    )
+                    logger.error(data)
+                except TimeoutError:
+                    pass
+        finally:
+            await self.send_packet(firehose.STOP_FIREHOSE_PACKET)
