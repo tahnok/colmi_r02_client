@@ -20,6 +20,7 @@ from colmi_r02_client.db import (
     Sync,
     get_last_sync,
     DateTimeInUTC,
+    SleepLog,
 )
 
 
@@ -30,7 +31,7 @@ def get_address() -> str:
 
 @pytest.fixture(name="empty_full_data")
 def get_empty_full_data(address) -> FullData:
-    return FullData(address=address, heart_rates=[], sport_details=[])
+    return FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[])
 
 
 def test_get_db_session_memory():
@@ -56,6 +57,7 @@ def test_get_db_tables_exist():
             "syncs",
             "heart_rates",
             "sport_details",
+            "sleep_logs",
         }
 
 
@@ -132,7 +134,7 @@ def test_sync_writes_heart_rates():
         index=295,
         range=5,
     )
-    fd = FullData(address=address, heart_rates=[hrl], sport_details=[])
+    fd = FullData(address=address, heart_rates=[hrl], sport_details=[], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd)
 
@@ -157,7 +159,7 @@ def test_sync_writes_heart_rates_only_non_zero_heart_rates():
         index=295,
         range=5,
     )
-    fd = FullData(address=address, heart_rates=[hrl], sport_details=[])
+    fd = FullData(address=address, heart_rates=[hrl], sport_details=[], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd)
 
@@ -175,7 +177,7 @@ def test_sync_writes_heart_rates_once():
         index=295,
         range=5,
     )
-    fd_1 = FullData(address=address, heart_rates=[hrl_1], sport_details=[])
+    fd_1 = FullData(address=address, heart_rates=[hrl_1], sport_details=[], sleep_logs=[])
 
     hrl_2 = hr.HeartRateLog(
         heart_rates=[80] * 288,
@@ -184,7 +186,7 @@ def test_sync_writes_heart_rates_once():
         index=295,
         range=5,
     )
-    fd_2 = FullData(address=address, heart_rates=[hrl_2], sport_details=[])
+    fd_2 = FullData(address=address, heart_rates=[hrl_2], sport_details=[], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd_1)
         full_sync(session, fd_2)
@@ -203,7 +205,7 @@ def test_sync_handles_inconsistent_data(caplog):
         index=295,
         range=5,
     )
-    fd_1 = FullData(address=address, heart_rates=[hrl_1], sport_details=[])
+    fd_1 = FullData(address=address, heart_rates=[hrl_1], sport_details=[], sleep_logs=[])
 
     hrl_2 = hr.HeartRateLog(
         heart_rates=[90] * 288,
@@ -212,7 +214,7 @@ def test_sync_handles_inconsistent_data(caplog):
         index=295,
         range=5,
     )
-    fd_2 = FullData(address=address, heart_rates=[hrl_2], sport_details=[])
+    fd_2 = FullData(address=address, heart_rates=[hrl_2], sport_details=[], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd_1)
         full_sync(session, fd_2)
@@ -235,7 +237,7 @@ def test_full_sync_writes_sport_details():
         steps=6969,
         distance=1234,
     )
-    fd = FullData(address=address, heart_rates=[], sport_details=[[sd]])
+    fd = FullData(address=address, heart_rates=[], sport_details=[[sd]], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd)
 
@@ -251,13 +253,90 @@ def test_full_sync_writes_sport_details():
 
 def test_full_sync_no_sport_details():
     address = "fake"
-    fd = FullData(address=address, heart_rates=[], sport_details=[steps.NoData(), steps.NoData()])
+    fd = FullData(address=address, heart_rates=[], sport_details=[steps.NoData(), steps.NoData()], sleep_logs=[])
     with get_db_session() as session:
         full_sync(session, fd)
 
         sport_details = session.scalars(select(SportDetail)).all()
 
     assert len(sport_details) == 0
+
+
+def test_full_sync_writes_sleep_logs():
+    from colmi_r02_client.big_data import SleepDay, SleepPeriod
+    address = "fake"
+    # Simulate 1 day of sleep data
+    sleep_day = SleepDay(
+        daysAgo=0,
+        sleepStart=60,
+        sleepEnd=420,
+        periods=[SleepPeriod(type=2, minutes=30), SleepPeriod(type=3, minutes=60)]
+    )
+    fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day])
+    with get_db_session() as session:
+        full_sync(session, fd)
+        ring = session.scalars(select(Ring)).one()
+        sync_obj = session.scalars(select(Sync)).one()
+        sleep_logs = session.scalars(select(SleepLog)).all()
+        assert len(sleep_logs) == 1
+        sleep_log = sleep_logs[0]
+        assert sleep_log.ring_id == ring.ring_id
+        assert sleep_log.sync_id == sync_obj.sync_id
+        assert sleep_log.sleep_start == 60
+        assert sleep_log.sleep_end == 420
+        import json
+        periods = json.loads(sleep_log.periods)
+        assert periods == [{"type": 2, "minutes": 30}, {"type": 3, "minutes": 60}]
+
+
+def test_full_sync_no_sleep_logs():
+    address = "fake"
+    fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[])
+    with get_db_session() as session:
+        full_sync(session, fd)
+        sleep_logs = session.scalars(select(SleepLog)).all()
+        assert len(sleep_logs) == 0
+
+
+def test_full_sync_updates_sleep_logs():
+    from colmi_r02_client.big_data import SleepDay, SleepPeriod
+    address = "fake"
+    sleep_day = SleepDay(
+        daysAgo=0,
+        sleepStart=60,
+        sleepEnd=420,
+        periods=[SleepPeriod(type=2, minutes=30)]
+    )
+    fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day])
+    with get_db_session() as session:
+        full_sync(session, fd)
+        # Update with new data for same day
+        sleep_day2 = SleepDay(
+            daysAgo=0,
+            sleepStart=120,
+            sleepEnd=480,
+            periods=[SleepPeriod(type=3, minutes=60)]
+        )
+        fd2 = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[sleep_day2])
+        full_sync(session, fd2)
+        sleep_logs = session.scalars(select(SleepLog)).all()
+        assert len(sleep_logs) == 1
+        sleep_log = sleep_logs[0]
+        assert sleep_log.sleep_start == 120
+        assert sleep_log.sleep_end == 480
+        import json
+        periods = json.loads(sleep_log.periods)
+        assert periods == [{"type": 3, "minutes": 60}]
+
+
+def test_full_sync_ignores_invalid_sleep_logs():
+    address = "fake"
+    # None and wrong type should be ignored
+    fd = FullData(address=address, heart_rates=[], sport_details=[], sleep_logs=[None, "not_a_sleepday"])
+    with get_db_session() as session:
+        full_sync(session, fd)
+        sleep_logs = session.scalars(select(SleepLog)).all()
+        assert len(sleep_logs) == 0
 
 
 def test_get_last_sync_never():
