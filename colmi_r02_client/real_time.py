@@ -4,7 +4,7 @@ Stream real time data from the ring.
 Currently heart rate and SPO2 seem reasonable.
 
 HRV, ECG, blood pressure and blood sugar seem unlikely to be something you
-can correct
+can collect
 """
 
 from dataclasses import dataclass

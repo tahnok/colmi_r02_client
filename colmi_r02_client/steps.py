@@ -16,6 +16,9 @@ def read_steps_packet(day_offset: int = 0) -> bytearray:
     - 0x5f # less than 95 and greater than byte
     - 0x01 # constant
     """
+    if not 0 <= day_offset <= 255:
+        raise ValueError(f"day_offset must be between 0 and 255, got {day_offset}")
+
     sub_data = bytearray(b"\x00\x0f\x00\x5f\x01")
     sub_data[0] = day_offset
 
@@ -47,7 +50,7 @@ class SportDetail:
 
 
 class NoData:
-    """Returned when there's no heart rate data"""
+    """Returned when there's no step data"""
 
 
 class SportDetailParser:
@@ -75,11 +78,15 @@ class SportDetailParser:
         assert len(packet) == 16
         assert packet[0] == CMD_GET_STEP_SOMEDAY
 
-        if self.index == 0 and packet[1] == 255:
+        # 255 and 240 are not valid BCD encoded years, so it's safe to treat any
+        # packet containing them as a "no data" marker or a header respectively,
+        # even if state from an earlier log that never completed is left over
+        if packet[1] == 255:
             self.reset()
             return NoData()
 
-        if self.index == 0 and packet[1] == 240:
+        if packet[1] == 240:
+            self.reset()
             if packet[3] == 1:
                 self.new_calorie_protocol = True
             self.index += 1

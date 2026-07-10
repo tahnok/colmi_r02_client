@@ -113,6 +113,9 @@ class Client:
                 self.queues[packet_type].put_nowait(result)
             else:
                 logger.debug(f"No result returned from parser for {packet_type}")
+        elif packet_type in self.queues:
+            # a raw command asked to receive replies for this packet type
+            self.queues[packet_type].put_nowait(packet)
         else:
             logger.warning(f"Did not expect this packet: {packet}")
 
@@ -139,8 +142,10 @@ class Client:
 
         valid_readings: list[int] = []
         error = False
-        tries = 0
-        while len(valid_readings) < 6 and tries < 20:
+        # the ring streams readings roughly once a second, sending 0 until the
+        # sensor locks on, so wait on wall clock time instead of packet count
+        deadline = asyncio.get_running_loop().time() + 40
+        while len(valid_readings) < 6 and asyncio.get_running_loop().time() < deadline:
             try:
                 data: real_time.Reading | real_time.ReadingError = await asyncio.wait_for(
                     self.queues[real_time.CMD_START_REAL_TIME].get(),
@@ -152,7 +157,7 @@ class Client:
                 if data.value != 0:
                     valid_readings.append(data.value)
             except TimeoutError:
-                tries += 1
+                pass
 
         await self.send_packet(stop_packet)
         if error:
@@ -232,13 +237,16 @@ class Client:
         await self.send_packet(reboot.REBOOT_PACKET)
 
     async def raw(self, command: int, subdata: bytearray, replies: int = 0) -> list[bytearray]:
+        # commands without a registered handler need a queue so _handle_tx can deliver replies
+        queue = self.queues.setdefault(command, asyncio.Queue())
+
         p = packet.make_packet(command, subdata)
         await self.send_packet(p)
 
         results = []
         while replies > 0:
             data: bytearray = await asyncio.wait_for(
-                self.queues[command].get(),
+                queue.get(),
                 timeout=2,
             )
             results.append(data)

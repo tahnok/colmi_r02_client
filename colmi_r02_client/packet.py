@@ -12,7 +12,7 @@ def make_packet(command: int, sub_data: bytearray | None = None) -> bytearray:
     packet[0] = command
 
     if sub_data:
-        assert len(sub_data) <= 14, "Sub data must be less than 14 bytes"
+        assert len(sub_data) <= 14, "Sub data must be 14 bytes or less"
         for i in range(len(sub_data)):
             packet[i + 1] = sub_data[i]
 
