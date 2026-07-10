@@ -194,6 +194,39 @@ def test_sync_writes_heart_rates_once():
     assert len(logs) == 288
 
 
+def test_sync_two_rings_same_timestamps(caplog):
+    """Data from one ring must not stop another ring's data at the same timestamps from being stored"""
+
+    hrl = hr.HeartRateLog(
+        heart_rates=[80] * 288,
+        timestamp=datetime(2024, 11, 11, 11, 11, tzinfo=timezone.utc),
+        size=24,
+        index=295,
+        range=5,
+    )
+    sd = steps.SportDetail(
+        year=2024,
+        month=11,
+        day=11,
+        time_index=0,
+        calories=4200,
+        steps=6969,
+        distance=1234,
+    )
+    fd_1 = FullData(address="ring one", heart_rates=[hrl], sport_details=[[sd]])
+    fd_2 = FullData(address="ring two", heart_rates=[hrl], sport_details=[[sd]])
+    with get_db_session() as session:
+        full_sync(session, fd_1)
+        full_sync(session, fd_2)
+
+        logs = session.scalars(select(HeartRate)).all()
+        sport_details = session.scalars(select(SportDetail)).all()
+
+    assert len(logs) == 288 * 2
+    assert len(sport_details) == 2
+    assert "Inconsistent data detected!" not in caplog.text
+
+
 def test_sync_handles_inconsistent_data(caplog):
     address = "fake"
     hrl_1 = hr.HeartRateLog(

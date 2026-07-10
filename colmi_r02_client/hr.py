@@ -94,6 +94,9 @@ class HeartRateLogParser:
             self.reset()
             return result
         if sub_type == 0:
+            # first packet of a new log, drop any state left over from an
+            # earlier log that never completed (e.g. a timed out request)
+            self.reset()
             self.end = False
             self.size = packet[2]  # number of expected packets
             self.range = packet[3]

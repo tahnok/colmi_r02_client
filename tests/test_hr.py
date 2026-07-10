@@ -67,6 +67,24 @@ def test_parse_until_end():
     assert result.range == 5
 
 
+def test_parse_recovers_from_aborted_log():
+    """A log that never completed (e.g. timed out request) must not corrupt the next parse"""
+
+    parser = HeartRateLogParser()
+    for p in HEART_RATE_PACKETS[:5]:
+        parser.parse(p)
+
+    # a new request starts over from the first packet
+    for p in HEART_RATE_PACKETS[:-1]:
+        assert parser.parse(p) is None
+
+    result = parser.parse(HEART_RATE_PACKETS[-1])
+
+    assert isinstance(result, HeartRateLog)
+    assert result.size == 24
+    assert result.index == 295
+
+
 def test_parse_no_data():
     parser = HeartRateLogParser()
     result = parser.parse(

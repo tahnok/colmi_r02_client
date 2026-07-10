@@ -7,6 +7,8 @@ import dataclasses
 
 
 def print_lists(rows: list[list[Any]], header: bool = False) -> str:
+    if not rows:
+        return ""
     widths = [0] * len(rows[0])
     for row in rows:
         for i, col in enumerate(row):
@@ -27,6 +29,8 @@ def print_lists(rows: list[list[Any]], header: bool = False) -> str:
 
 
 def print_dicts(rows: list[dict]) -> str:
+    if not rows:
+        return ""
     lists = [list(rows[0].keys())]
     lists.extend(list(x.values()) for x in rows)
     return print_lists(lists, header=True)

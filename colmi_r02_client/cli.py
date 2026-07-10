@@ -82,6 +82,7 @@ async def info(client: Client) -> None:
 async def get_heart_rate_log(client: Client, target: datetime) -> None:
     """Get heart rate for given date"""
 
+    target = date_utils.naive_to_aware(target)
     async with client:
         log = await client.get_heart_rate_log(target)
         print("Data:", log)
@@ -170,7 +171,9 @@ async def get_steps(client: Client, when: datetime | None = None, as_csv: bool =
     """Get step data"""
 
     if when is None:
-        when = datetime.now(tz=timezone.utc)
+        when = date_utils.now()
+    else:
+        when = date_utils.naive_to_aware(when)
     async with client:
         result = await client.get_steps(when)
         if isinstance(result, steps.NoData):
@@ -247,6 +250,7 @@ async def sync(client: Client, db_path: Path | None, start: datetime | None, end
 
     Currently grabs:
         - heart rates
+        - sport details (steps, calories, distance)
     """
 
     if db_path is None:
@@ -325,7 +329,7 @@ async def scan(all: bool) -> None:
         click.echo("-" * 44)
         for d in devices:
             name = d.name
-            if name and (all or any(name for p in DEVICE_NAME_PREFIXES if name.startswith(p))):
-                click.echo(f"{name:>20}  |  {d.address}")
+            if all or (name and any(name.startswith(p) for p in DEVICE_NAME_PREFIXES)):
+                click.echo(f"{name or '':>20}  |  {d.address}")
     else:
         click.echo("No devices found. Try moving the ring closer to computer")

@@ -165,6 +165,7 @@ def _add_heart_rate(sync: Sync, ring: Ring, data: FullData, session: Session) ->
         existing = {}
         for heart_rate in session.scalars(
             select(HeartRate)
+            .where(HeartRate.ring_id == ring.ring_id)
             .where(HeartRate.timestamp >= start_of_day(log.timestamp))
             .where(HeartRate.timestamp <= end_of_day(log.timestamp))
         ):
@@ -198,6 +199,7 @@ def _add_sport_details(sync: Sync, ring: Ring, data: FullData, session: Session)
     existing_sport_logs = {}
     for sport_detail_record in session.scalars(
         select(SportDetail)
+        .where(SportDetail.ring_id == ring.ring_id)
         .where(SportDetail.timestamp >= start_of_day(start))
         .where(SportDetail.timestamp <= end_of_day(end))
     ):

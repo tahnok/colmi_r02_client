@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from colmi_r02_client.steps import SportDetailParser, SportDetail, NoData
+import pytest
+
+from colmi_r02_client.steps import SportDetailParser, SportDetail, NoData, read_steps_packet
 
 
 def test_parse_simple():
@@ -79,6 +81,27 @@ def test_parse_multi():
     actual = sdp.parse(packets[-1])
 
     assert actual == expected
+
+
+def test_parse_recovers_from_aborted_log():
+    """A log that never completed (e.g. timed out request) must not corrupt the next parse"""
+
+    sdp = SportDetailParser()
+    # header claiming 5 packets, but only one data packet arrives
+    assert sdp.parse(bytearray(b"C\xf0\x05\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x009")) is None
+    assert sdp.parse(bytearray(b"C#\x08\x13\x10\x00\x05\xc8\x000\x00\x1b\x00\x00\x00\xa9")) is None
+
+    # a new request starts over with a fresh header
+    assert sdp.parse(bytearray(b"C\xf0\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x005")) is None
+    r = sdp.parse(bytearray(b"C$\x10\x15\\\x00\x01y\x00\x15\x00\x10\x00\x00\x00\x87"))
+
+    assert r == [SportDetail(year=2024, month=10, day=15, time_index=92, calories=1210, steps=21, distance=16)]
+
+
+@pytest.mark.parametrize("day_offset", [-1, 256])
+def test_read_steps_packet_invalid_offset(day_offset):
+    with pytest.raises(ValueError, match="day_offset"):
+        read_steps_packet(day_offset)
 
 
 def test_no_data_parse():
